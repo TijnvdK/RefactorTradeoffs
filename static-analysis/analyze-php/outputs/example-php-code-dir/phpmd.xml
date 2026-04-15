@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<pmd version="2.15.0snapshot202312110823" tool="phpmd" timestamp="2026-04-15T05:55:42+00:00">
+  <file name="/php-code/simple.php">
+    <violation beginline="9" endline="9" rule="ShortVariable" ruleset="Naming Rules" externalInfoUrl="https://phpmd.org/rules/naming.html#shortvariable" priority="3">
+      Avoid variables with short names like $a. Configured minimum length is 3.
+    </violation>
+    <violation beginline="9" endline="9" rule="ShortVariable" ruleset="Naming Rules" externalInfoUrl="https://phpmd.org/rules/naming.html#shortvariable" priority="3">
+      Avoid variables with short names like $b. Configured minimum length is 3.
+    </violation>
+    <violation beginline="14" endline="14" rule="ShortVariable" ruleset="Naming Rules" externalInfoUrl="https://phpmd.org/rules/naming.html#shortvariable" priority="3">
+      Avoid variables with short names like $a. Configured minimum length is 3.
+    </violation>
+    <violation beginline="14" endline="14" rule="ShortVariable" ruleset="Naming Rules" externalInfoUrl="https://phpmd.org/rules/naming.html#shortvariable" priority="3">
+      Avoid variables with short names like $b. Configured minimum length is 3.
+    </violation>
+  </file>
+</pmd>

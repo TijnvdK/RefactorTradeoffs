@@ -209,4 +209,3 @@ marimo/_lsp/
 __marimo__/
 
 ### Custom additions below this line ###
-static-analysis/analyze-php/outputs/*
