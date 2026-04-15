@@ -1,4 +1,4 @@
-exclude: '^static_analysis/analyze_php/(phars|outputs)/.*'
+exclude: '^static_analysis/analyze_php/(phars|outputs)/.*|^workload_profile/example/.*'
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
