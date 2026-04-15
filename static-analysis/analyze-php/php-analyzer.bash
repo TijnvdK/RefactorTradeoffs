@@ -5,7 +5,7 @@
 ## Directory paths ##
 SCRIPT_DIR="$PWD"
 PHARS_DIR="$SCRIPT_DIR/phars"
-OUTPUT_DIR="$SCRIPT_DIR/outputs"
+OUTPUT_DIR="$SCRIPT_DIR/outputs/raw-output"
 
 if [[ ! -d "$PHARS_DIR" ]]; then
     echo "ERROR: PHARs directory '$PHARS_DIR' does not exist."
@@ -13,7 +13,8 @@ if [[ ! -d "$PHARS_DIR" ]]; then
 fi
 
 if [[ ! -d "$OUTPUT_DIR" ]]; then
-    mkdir -p "$OUTPUT_DIR"
+    echo "ERROR: Output directory '$OUTPUT_DIR' does not exist."
+    exit 1
 fi
 
 ## Container configuration ##
@@ -61,7 +62,7 @@ docker run --name "$CONTAINER_NAME" \
             --reportfile=/outputs/phpmd.xml
         php /phars/phpmetrics.phar --report-csv=/outputs/phpmetrics.csv \
             /php-code
-    '
+    ' > /dev/null
 
 echo "Analysis complete. Output files available in ${OUTPUT_DIR}"
 

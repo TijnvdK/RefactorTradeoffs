@@ -1,4 +1,4 @@
-exclude: '^static-analysis/analyze-php/phars/.*'
+exclude: '^static-analysis/analyze-php/(phars|outputs)/.*'
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
@@ -15,3 +15,11 @@ repos:
     hooks:
       - id: shellcheck
         files: '^.*\.bash$'
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.10
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+        types_or: [ python, pyi ]
+      - id: ruff-format
+        types_or: [ python, pyi ]
