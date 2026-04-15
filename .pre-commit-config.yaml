@@ -4,7 +4,6 @@ repos:
     rev: v6.0.0
     hooks:
       - id: check-added-large-files
-        exclude: '^.*\.phar$'
       - id: double-quote-string-fixer
       - id: end-of-file-fixer
       - id: mixed-line-ending
