@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpcs version="4.0.1">
+<file name="/php-code/simple.php" errors="11" warnings="1" fixable="8">
+    <warning line="1" column="1" source="PSR1.Files.SideEffects.FoundWithSymbols" severity="5" fixable="0">A file should declare new symbols (classes, functions, constants, etc.) and cause no other side effects, or it should execute logic with side effects, but should not do both. The first symbol is defined on line 9 and the first side effect is on line 28.</warning>
+    <error line="9" column="1" source="PSR1.Classes.ClassDeclaration.MissingNamespace" severity="5" fixable="0">Each class must be in a namespace of at least one level (a top-level vendor name)</error>
+    <error line="9" column="18" source="PSR2.Classes.ClassDeclaration.OpenBraceNewLine" severity="5" fixable="1">Opening brace of a class must be on the line after the definition</error>
+    <error line="10" column="33" source="Squiz.Functions.MultiLineFunctionDeclaration.BraceOnSameLine" severity="5" fixable="1">Opening brace should be on a new line</error>
+    <error line="11" column="9" source="Generic.ControlStructures.InlineControlStructure.NotAllowed" severity="5" fixable="1">Inline control structures are not allowed</error>
+    <error line="15" column="38" source="Squiz.Functions.MultiLineFunctionDeclaration.BraceOnSameLine" severity="5" fixable="1">Opening brace should be on a new line</error>
+    <error line="17" column="9" source="Generic.ControlStructures.InlineControlStructure.NotAllowed" severity="5" fixable="1">Inline control structures are not allowed</error>
+    <error line="22" column="1" source="PSR1.Classes.ClassDeclaration.MultipleClasses" severity="5" fixable="0">Each class must be in a file by itself</error>
+    <error line="22" column="1" source="PSR1.Classes.ClassDeclaration.MissingNamespace" severity="5" fixable="0">Each class must be in a namespace of at least one level (a top-level vendor name)</error>
+    <error line="22" column="14" source="PSR2.Classes.ClassDeclaration.OpenBraceNewLine" severity="5" fixable="1">Opening brace of a class must be on the line after the definition</error>
+    <error line="23" column="35" source="Squiz.Functions.MultiLineFunctionDeclaration.BraceOnSameLine" severity="5" fixable="1">Opening brace should be on a new line</error>
+    <error line="37" column="1" source="PSR2.Files.ClosingTag.NotAllowed" severity="5" fixable="1">A closing tag is not permitted at the end of a PHP file</error>
+</file>
+</phpcs>
+

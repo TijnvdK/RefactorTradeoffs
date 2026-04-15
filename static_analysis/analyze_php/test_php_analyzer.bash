@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 
 ### See if php-analyzer script exists ###
-if [[ ! -x "./php-analyzer.bash" ]]; then
-    echo "ERROR: php-analyzer.bash not found in current directory."
+if [[ ! -x "./php_analyzer.bash" ]]; then
+    echo "ERROR: php_analyzer.bash not found in current directory."
     exit 1
 fi
 
 ### Test: Check if given a PHP code directory, php-analyzer creates ###
 ### four XML output files in the outputs directory                  ###
-if ! ./php-analyzer.bash "./example-php-code-dir"; then
-    echo "ERROR: php-analyzer.bash did not execute successfully."
+if ! ./php_analyzer.bash "./example_php_code_dir"; then
+    echo "ERROR: php_analyzer.bash did not execute successfully."
     exit 1
 fi
 
@@ -20,7 +20,7 @@ EXPECTED_FILES=(
     "phpmetrics.csv"
 )
 for FILE in "${EXPECTED_FILES[@]}"; do
-    if [[ ! -f "./outputs/$FILE" ]]; then
+    if [[ ! -f "./outputs/raw_output/$FILE" ]]; then
         echo "ERROR: '$FILE' was not found in the outputs directory."
         exit 1
     fi

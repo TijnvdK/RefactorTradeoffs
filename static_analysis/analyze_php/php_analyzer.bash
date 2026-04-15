@@ -5,7 +5,7 @@
 ## Directory paths ##
 SCRIPT_DIR="$PWD"
 PHARS_DIR="$SCRIPT_DIR/phars"
-OUTPUT_DIR="$SCRIPT_DIR/outputs/raw-output"
+OUTPUT_DIR="$SCRIPT_DIR/outputs/raw_output"
 
 if [[ ! -d "$PHARS_DIR" ]]; then
     echo "ERROR: PHARs directory '$PHARS_DIR' does not exist."

@@ -249,7 +249,7 @@ def main():
     _cwd = Path.cwd()
 
     ## Expected base location ##
-    base_path = _cwd / 'outputs' / 'raw-output' / 'opencontext-engineblock'
+    base_path = _cwd / 'outputs' / 'raw_output' / 'opencontext_engineblock'
 
     ## Style violations and class-based results are ignored for now ##
     parsed_output__base = parse_pdepend(str(base_path / 'pdepend.xml'))
@@ -259,7 +259,7 @@ def main():
     )
 
     ## Expected output location ##
-    output_path = _cwd / 'outputs' / 'parsed-output' / 'opencontext-engineblock'
+    output_path = _cwd / 'outputs' / 'parsed_output' / 'opencontext_engineblock'
     output_path.mkdir(parents=True, exist_ok=True)
 
     ## Create CSV output ##
