@@ -1,0 +1,6 @@
+{
+    "files.readonlyInclude": {
+        "**/static-analysis/analyze-php/outputs/**": true,
+        "**/static-analysis/analyze-php/phars/**": true
+    }
+}

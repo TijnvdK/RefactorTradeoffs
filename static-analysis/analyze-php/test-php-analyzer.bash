@@ -17,6 +17,7 @@ EXPECTED_FILES=(
     "pdepend.xml"
     "phpcs.xml"
     "phpmd.xml"
+    "phpmetrics.csv"
 )
 for FILE in "${EXPECTED_FILES[@]}"; do
     if [[ ! -f "./outputs/$FILE" ]]; then
@@ -24,12 +25,6 @@ for FILE in "${EXPECTED_FILES[@]}"; do
         exit 1
     fi
 done
-## PHP Metrics generates an HTML report, so we check for the ##
-## directory instead                                         ##
-if [[ ! -d "./outputs/phpmetrics" ]]; then
-    echo "ERROR: 'phpmetrics' directory was not found in the outputs directory."
-    exit 1
-fi
 
 ### END OF TESTS ###
 echo "If you see this message, all tests passed successfully!"

@@ -59,9 +59,9 @@ docker run --name "$CONTAINER_NAME" \
         php /phars/phpmd.phar /php-code xml \
             cleancode,codesize,controversial,design,naming,unusedcode \
             --reportfile=/outputs/phpmd.xml
-        php /phars/phpmetrics.phar --report-html=/outputs/phpmetrics \
+        php /phars/phpmetrics.phar --report-csv=/outputs/phpmetrics.csv \
             /php-code
-    ' > /dev/null
+    '
 
 echo "Analysis complete. Output files available in ${OUTPUT_DIR}"
 
