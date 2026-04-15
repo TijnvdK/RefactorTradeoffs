@@ -1,19 +1,24 @@
 from pathlib import Path
 
+import pytest
+
+
+@pytest.fixture
+def base_path():
+    _cwd = Path.cwd()
+    return (
+        _cwd
+        / 'static_analysis'
+        / 'analyze_php'
+        / 'outputs'
+        / 'raw_output'
+        / 'example_php_code_dir'
+    )
+
 
 class TestOutputParser:
-    def test_parse_pdepend(self):
+    def test_parse_pdepend(self, base_path):
         from static_analysis.analyze_php.output_parser import parse_pdepend
-
-        _cwd = Path.cwd()
-        base_path = (
-            _cwd
-            / 'static_analysis'
-            / 'analyze_php'
-            / 'outputs'
-            / 'raw_output'
-            / 'example_php_code_dir'
-        )
 
         parsed_output = parse_pdepend(str(base_path / 'pdepend.xml'))
 
@@ -35,18 +40,8 @@ class TestOutputParser:
 
         assert expected_keys.issubset(first_method.keys())
 
-    def test_parse_phpcs(self):
+    def test_parse_phpcs(self, base_path):
         from static_analysis.analyze_php.output_parser import parse_phpcs
-
-        _cwd = Path.cwd()
-        base_path = (
-            _cwd
-            / 'static_analysis'
-            / 'analyze_php'
-            / 'outputs'
-            / 'raw_output'
-            / 'example_php_code_dir'
-        )
 
         parsed_output = parse_phpcs(str(base_path / 'phpcs.xml'))
 
@@ -62,18 +57,8 @@ class TestOutputParser:
         )
         assert all_warnings > 0
 
-    def test_parse_phpmd(self):
+    def test_parse_phpmd(self, base_path):
         from static_analysis.analyze_php.output_parser import parse_phpmd
-
-        _cwd = Path.cwd()
-        base_path = (
-            _cwd
-            / 'static_analysis'
-            / 'analyze_php'
-            / 'outputs'
-            / 'raw_output'
-            / 'example_php_code_dir'
-        )
 
         parsed_output = parse_phpmd(str(base_path / 'phpmd.xml'))
 
@@ -82,18 +67,8 @@ class TestOutputParser:
         parsed_output = next(iter(parsed_output.values()))
         assert len(parsed_output) > 0
 
-    def test_phpmetrics(self):
+    def test_phpmetrics(self, base_path):
         from static_analysis.analyze_php.output_parser import parse_phpmetrics
-
-        _cwd = Path.cwd()
-        base_path = (
-            _cwd
-            / 'static_analysis'
-            / 'analyze_php'
-            / 'outputs'
-            / 'raw_output'
-            / 'example_php_code_dir'
-        )
 
         parsed_output = parse_phpmetrics(str(base_path / 'phpmetrics.csv'))
 
