@@ -6,7 +6,7 @@ sudo apt-get install php-xdebug
 ```ini
 xdebug.mode = trace
 xdebug.start_with_request=yes
-xdebug.output_dir=/tmp/xdebug_traces
+xdebug.output_dir=/tmp/xdebug_traces  # Or any directory you prefer
 xdebug.trace_format=1
 ```
 3. Run the application to generate the Xdebug trace file.
