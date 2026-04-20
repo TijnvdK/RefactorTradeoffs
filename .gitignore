@@ -140,6 +140,7 @@ celerybeat.pid
 .env
 .envrc
 .venv
+.windows-venv
 env/
 venv/
 ENV/
