@@ -159,7 +159,6 @@ def parse_phpmd(path: str) -> Dict[str, List[PHPMDOutput]]:
             )
             result[file_path].append(
                 PHPMDOutput(
-                    file_path=file_path,
                     line=int(violation.get('beginline', '0')),
                     rule=violation.get('rule', 'Unknown'),
                     message=text,
@@ -222,7 +221,7 @@ def _append_side_phpmd_to_base(
         List[PDependWithPHPMD]: The combined output, where each PDependOutput
             now includes a list of associated PHPMD violations.
     """
-    result: List[PDependWithPHPMD] = base.copy()
+    result: List[PDependWithPHPMD] = base.copy()  # type: ignore
 
     for output_ in result:
         file_path = output_['file_path']
