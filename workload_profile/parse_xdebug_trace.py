@@ -62,8 +62,10 @@ def parse_xdebug_trace(
 
     output_file_path = output_path or 'xdebug_trace_output.jsonl'
     with open(output_file_path, 'w', encoding='utf-8') as f:
-        for functions, count in counts.items():
-            f.write(f'{json_dumps({"count": count, "functions": functions})}\n')
+        for function_name, count in counts.items():
+            f.write(
+                f'{json_dumps({"count": count, "function_name": function_name})}\n'
+            )
 
 
 if __name__ == '__main__':

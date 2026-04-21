@@ -41,6 +41,8 @@ class TestParseXdebugTrace:
             assert output_file_path.exists()
             output_content = output_file_path.read_text()
             # Expecting counts for myFunction and otherFunction
-            assert output_content == ('{"count": 2, "functions": "function"}\n')
+            assert output_content == (
+                '{"count": 2, "function_name": "function"}\n'
+            )
             assert 'otherFunction' not in output_content
             assert 'otherOtherFunction' not in output_content
