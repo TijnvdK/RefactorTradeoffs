@@ -1,3 +1,3 @@
-name,length,vocabulary,volume,difficulty,effort,level,bugs,time,intelligentContent,number_operators,number_operands,number_operators_unique,number_operands_unique,ccn,ccnMethodMax,kanDefect,mi,mIwoC,commentWeight,externals,parents,lcom,relativeStructuralComplexity,relativeDataComplexity,relativeSystemComplexity,totalStructuralComplexity,totalDataComplexity,totalSystemComplexity,cloc,loc,lloc,methods,nbMethodsIncludingGettersSetters,nbMethods,nbMethodsPrivate,nbMethodsPublic,nbMethodsGetter,nbMethodsSetters,afferentCoupling,efferentCoupling,instability,depthOfInheritanceTree,pageRank
-Calculator,32,14,121.84,17.1,2083.38,0.06,0.04,116,7.12,13,19,9,5,4,3,0.22,89.44,56.96,32.48,N/A,N/A,2,0,5,5,0,10,10,5,24,19,N/A,2,2,0,2,0,0,0,0,0,N/A,0.5
-Logger,6,4,12,0.67,8,1.5,0,0,18,2,4,1,3,1,1,0.15,72.61,72.61,0,N/A,N/A,1,0,1,1,0,1,1,0,8,8,N/A,1,1,0,1,0,0,0,0,0,N/A,0.5
+version https://git-lfs.github.com/spec/v1
+oid sha256:afc31b895d319c437ab05c62af6b2c9c4cdfb23ff6def10461f5c80ea22c906a
+size 866
