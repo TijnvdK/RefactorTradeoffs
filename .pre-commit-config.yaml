@@ -1,4 +1,4 @@
-exclude: '^static_analysis/analyze_php/(phars|outputs)/.*|^workload_profile/example/.*'
+exclude: "^analysis/static_analysis/analyze_php/(phars|outputs)/.*|^analysis/workload_profile/example/.*"
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
@@ -21,11 +21,11 @@ repos:
     hooks:
       - id: ruff-check
         args: [--fix]
-        types_or: [ python, pyi ]
+        types_or: [python, pyi]
       - id: ruff-format
-        types_or: [ python, pyi ]
+        types_or: [python, pyi]
   - repo: https://github.com/pre-commit/mirrors-clang-format
     rev: v22.1.5
     hooks:
-    - id: clang-format
-      args: [--style=Google]
+      - id: clang-format
+        args: [--style=Google]
