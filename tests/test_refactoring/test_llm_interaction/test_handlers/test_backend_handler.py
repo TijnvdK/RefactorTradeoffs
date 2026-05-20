@@ -1,6 +1,6 @@
 import pytest
 
-from globals.custom_exceptions import LMCallFailed
+from src.globals.custom_exceptions import LMCallFailed
 from tests.random_generate_functions import (
     generate_random_float,
     generate_random_string,
@@ -9,7 +9,7 @@ from tests.random_generate_functions import (
 
 @pytest.fixture
 def backend_handler():
-    from refactoring.llm_interaction.handlers.ollama_handler import (
+    from src.refactoring.llm_interaction.handlers.ollama_handler import (
         OllamaHandler,
     )
 
