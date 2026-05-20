@@ -9,14 +9,14 @@ from tests.random_generate_functions import (
 )
 
 
-class TestHandler(BackendHandler):
+class HandlerTester(BackendHandler):
     def send_message(self, user_prompt: str) -> str:
         return f'This is mocked response to: {user_prompt}'
 
 
 @pytest.fixture
 def backend_handler():
-    return TestHandler(
+    return HandlerTester(
         system_prompt='system', model='model', temperature=0.5, timeout=30
     )
 
