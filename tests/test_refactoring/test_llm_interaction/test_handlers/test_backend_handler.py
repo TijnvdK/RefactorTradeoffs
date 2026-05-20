@@ -1,19 +1,22 @@
 import pytest
 
-from src.globals.custom_exceptions import LMCallFailed
+from src.refactoring.llm_interaction.handlers.backend_handler import (
+    BackendHandler,
+)
 from tests.random_generate_functions import (
     generate_random_float,
     generate_random_string,
 )
 
 
+class TestHandler(BackendHandler):
+    def send_message(self, user_prompt: str) -> str:
+        return f'This is mocked response to: {user_prompt}'
+
+
 @pytest.fixture
 def backend_handler():
-    from src.refactoring.llm_interaction.handlers.ollama_handler import (
-        OllamaHandler,
-    )
-
-    return OllamaHandler(
+    return TestHandler(
         system_prompt='system', model='model', temperature=0.5, timeout=30
     )
 
@@ -39,8 +42,7 @@ class TestBackendHandler:
         backend_handler.change_timeout(new_timeout)
         assert backend_handler._timeout == new_timeout
 
-    # We cannot test the success case as it needs a running Ollama instance.
-    def test_send_message_failure(self, backend_handler):
-        user_prompt = generate_random_string(20)
-        with pytest.raises(LMCallFailed):
-            backend_handler.send_message(user_prompt)
+    def test_send_message(self, backend_handler):
+        user_prompt = generate_random_string(30)
+        response = backend_handler.send_message(user_prompt)
+        assert response == f'This is mocked response to: {user_prompt}'

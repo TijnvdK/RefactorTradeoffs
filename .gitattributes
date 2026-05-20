@@ -1,3 +1,4 @@
-src/analysis/static_analysis/analyze_php/outputs/** filter=lfs diff=lfs merge=lfs -text
+src/analysis/static_analysis/analyze_php/outputs/raw_output/opencontext_engineblock/** filter=lfs diff=lfs merge=lfs -text
+src/analysis/static_analysis/analyze_php/outputs/parsed_output/opencontext_engineblock/** filter=lfs diff=lfs merge=lfs -text
 src/analysis/workload_profile/example/** filter=lfs diff=lfs merge=lfs -text
 src/energy_measurement/cpu_util/experiments/outputs/measurement_results/** filter=lfs diff=lfs merge=lfs -text
