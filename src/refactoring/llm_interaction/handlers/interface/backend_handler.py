@@ -16,13 +16,13 @@ class BackendHandler(ABC):
         Args:
             system_prompt (str): The system prompt for the backend handler.
             model (Optional[str], optional): The model to use. Defaults to None.
-            temperature (Optional[float], optional): The temperature for the model. Defaults to 0.7.
-            timeout (Optional[int], optional): The timeout for the model. Defaults to 60.
+            temperature (Optional[float], optional): The temperature for the model. Defaults to None.
+            timeout (Optional[int], optional): The timeout for the model. Defaults to None.
         """
         self._system_prompt = system_prompt
         self._model = model
-        self._temperature = temperature or 0.7
-        self._timeout = timeout or 60
+        self._temperature = temperature
+        self._timeout = timeout
 
     @property
     def model(self) -> str:

@@ -78,6 +78,21 @@ def agent(
     sys_prompts: List[str],
     user_prompts: List[UserPrompt],
 ) -> List[RefactoringAgentOutput]:
+    """
+    This agent interacts with the LLM via the provided backend handler to
+    refactor code snippets based on the provided inputs.
+
+    Args:
+        llm_handler (BackendHandler): The backend handler to use for
+        interacting with the LLM.
+        models (List[str]): The list of models to use.
+        sys_prompts (List[str]): The list of system prompts to use.
+        user_prompts (List[UserPrompt]): The list of user prompts to use.
+
+    Returns:
+        List[RefactoringAgentOutput]: The list of refactored code outputs.
+    """
+
     gpu_energy_meter = GPUEnergyMeter()
 
     result: List[RefactoringAgentOutput] = []

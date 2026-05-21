@@ -12,6 +12,13 @@ logger = getLogger(__name__)
 
 
 class OllamaHandler(BackendHandler):
+    """
+    Handler for interacting with the LLMs via Ollama.
+    It makes use of the Ollama Python client to send and receive messages.
+    For this file to work, you have to uncomment the dependency in
+    requirements.txt.
+    """
+
     _ollama_client: Optional[Client] = None
 
     def send_message(self, user_prompt: str) -> str:

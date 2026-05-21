@@ -14,6 +14,12 @@ logger = getLogger(__name__)
 
 
 class VLLMHandler(BackendHandler):
+    """
+    Handler for interacting with the LLMs via vLLM.
+    It makes use of the vLLM Python client to send and receive messages.
+    This client is installed by default with requirements.txt.
+    """
+
     def __init__(
         self,
         gpu_memory_utilization: float,
@@ -24,6 +30,19 @@ class VLLMHandler(BackendHandler):
         temperature: Optional[float] = None,
         timeout: Optional[int] = None,
     ):
+        """
+        Create a new VLLMHandler instance.
+
+        Args:
+            gpu_memory_utilization (float): The percentage of GPU memory to utilize for loading the model.
+            max_model_len (int): The maximum context length for the model.
+            max_tokens (int): The maximum number of tokens to generate in the response.
+            system_prompt (str): The system prompt for the backend handler.
+            model (Optional[str], optional): The model to use. Defaults to None.
+            temperature (Optional[float], optional): The temperature for the model. Defaults to None.
+            timeout (Optional[int], optional): The timeout for the model. Defaults to None.
+        """
+
         super().__init__(system_prompt, model, temperature, timeout)
 
         self._gpu_memory_utilization = gpu_memory_utilization
@@ -32,6 +51,8 @@ class VLLMHandler(BackendHandler):
 
     def change_model(self, new_model: str) -> None:
         if self._llm is not None:
+            # Remove the existing model from GPU memory before changing to a
+            # new model
             destroy_model_parallel()
             del self._llm
 
@@ -48,11 +69,18 @@ class VLLMHandler(BackendHandler):
             {'role': 'user', 'content': user_prompt},
         ]
 
-        sampling_params = SamplingParams(
-            temperature=self._temperature,
-            max_tokens=self._max_tokens,
-            stop=['<|file_sep|>', '<|im_end|>'],
-        )
+        sampling_params = None
+        if self._temperature is not None:
+            sampling_params = SamplingParams(
+                temperature=self._temperature,
+                max_tokens=self._max_tokens,
+                stop=['<|file_sep|>', '<|im_end|>'],
+            )
+        else:
+            sampling_params = SamplingParams(
+                max_tokens=self._max_tokens,
+                stop=['<|file_sep|>', '<|im_end|>'],
+            )
 
         try:
             outputs = self._llm.chat(
