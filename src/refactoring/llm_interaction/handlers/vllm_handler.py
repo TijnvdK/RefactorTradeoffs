@@ -6,7 +6,7 @@ from vllm.entrypoints.chat_utils import ChatCompletionMessageParam
 from vllm.distributed.parallel_state import destroy_model_parallel
 
 from src.globals.custom_exceptions import LMCallFailed
-from src.refactoring.llm_interaction.handlers.backend_handler import (
+from src.refactoring.llm_interaction.handlers.interface.backend_handler import (
     BackendHandler,
 )
 
@@ -31,6 +31,10 @@ class VLLMHandler(BackendHandler):
         self._max_tokens = max_tokens
 
     def change_model(self, new_model: str) -> None:
+        if self._llm is not None:
+            destroy_model_parallel()
+            del self._llm
+
         super().change_model(new_model)
         self._llm = LLM(
             model=self.model,
@@ -68,11 +72,3 @@ class VLLMHandler(BackendHandler):
             raise LMCallFailed
 
         return output
-
-    def destroy(self) -> None:
-        """
-        vLLM doesn't automatically remove models from memory after usage.
-        This function removes the model from memory.
-        """
-        destroy_model_parallel()
-        del self._llm

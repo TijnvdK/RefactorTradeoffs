@@ -11,10 +11,6 @@ class PET(ABC):
         Args:
             user_prompt (str): The user prompt.
 
-        Raises:
-            UnsupportedOperationError: If the model only supports the
-                `apply_and_call` method.
-
         Returns:
             str: The user prompt to which the PET is applied.
         """

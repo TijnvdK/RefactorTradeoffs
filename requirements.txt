@@ -1,6 +1,8 @@
 matplotlib==3.10.9
 numpy==2.3.5
-ollama==0.6.1
+# Uncomment the ollama line if you want to use Ollama as the backend for
+# LLM interactions.
+# ollama==0.6.1
 polars==1.40.1
 pre_commit==4.5.1
 pytest==9.0.3

@@ -1,6 +1,6 @@
 from typing import Callable, Optional
 
-from src.refactoring.llm_interaction.prompts.PET import PET
+from src.refactoring.llm_interaction.prompts.interface.PET import PET
 
 
 class PET_PrefixSuffix(PET):
