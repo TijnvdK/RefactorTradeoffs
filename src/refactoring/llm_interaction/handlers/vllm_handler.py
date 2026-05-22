@@ -1,4 +1,5 @@
-from logging import getLogger
+from logging import INFO, StreamHandler, basicConfig, getLogger
+from sys import stdout
 from typing import Optional
 
 from vllm import LLM, SamplingParams
@@ -8,6 +9,13 @@ from vllm.distributed.parallel_state import destroy_model_parallel
 from src.globals.custom_exceptions import LMCallFailed
 from src.refactoring.llm_interaction.handlers.interface.backend_handler import (
     BackendHandler,
+)
+
+
+basicConfig(
+    level=INFO,
+    handlers=[StreamHandler(stdout)],
+    format='%(asctime)s %(levelname)s %(name)s: %(message)s',
 )
 
 logger = getLogger(__name__)
@@ -48,13 +56,14 @@ class VLLMHandler(BackendHandler):
         self._gpu_memory_utilization = gpu_memory_utilization
         self._max_model_len = max_model_len
         self._max_tokens = max_tokens
+        self._llm: Optional[LLM] = None
 
     def change_model(self, new_model: str) -> None:
         if self._llm is not None:
             # Remove the existing model from GPU memory before changing to a
             # new model
             destroy_model_parallel()
-            del self._llm
+            self._llm = None
 
         super().change_model(new_model)
         self._llm = LLM(
@@ -64,6 +73,10 @@ class VLLMHandler(BackendHandler):
         )
 
     def send_message(self, user_prompt: str) -> str:
+        if self._llm is None:
+            logger.error('LLM is not initialized. Call change_model() first.')
+            raise LMCallFailed
+
         messages: list[ChatCompletionMessageParam] = [
             {'role': 'system', 'content': self._system_prompt},
             {'role': 'user', 'content': user_prompt},
@@ -90,8 +103,6 @@ class VLLMHandler(BackendHandler):
         except Exception as error_:
             logger.error(f'Error communicating with vLLM: {error_}')
             raise LMCallFailed
-
-        print(outputs)
 
         output = outputs[0].outputs[0].text
 

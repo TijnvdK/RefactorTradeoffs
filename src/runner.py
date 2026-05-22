@@ -1,0 +1,72 @@
+from importlib.util import find_spec
+from logging import getLogger
+from os import makedirs
+from pathlib import Path
+import sys
+
+if find_spec('src') is None:
+    repo_root = Path(__file__).resolve().parents[1]
+    sys.path.insert(0, str(repo_root))
+
+from src.utils import file_to_str_gen
+from src.refactoring.llm_interaction.agents.refactoring_agent import (
+    UserPrompt,
+    agent as refactoring_agent,
+)
+from src.refactoring.llm_interaction.handlers.vllm_handler import VLLMHandler
+
+logger = getLogger(__name__)
+
+CODE_DIR_TO_REFACTOR = Path('./datasets/OpenConext-engineblock/src')
+OUTPUT_DIR = Path('./datasets/OpenConext-engineblock-refactored')
+LANGUAGE_EXTENSION = '.php'
+
+MODELS = [
+    'Qwen/Qwen2.5-Coder-1.5B',
+    # 'Qwen/Qwen2.5-Coder-3B',
+    # 'Skywork/Skywork-SWE-32B',
+    # 'mistralai/Devstral-Small-2-24B-Instruct-2512'
+]
+
+
+def runner():
+    makedirs(OUTPUT_DIR, exist_ok=True)
+
+    llm_handler = VLLMHandler(
+        gpu_memory_utilization=0.8,
+        max_model_len=32768,
+        max_tokens=16384,
+        system_prompt='You are a green software expert. You will receive PHP code snippets and you need to refactor the code snippet to be more efficient and green, with equivalent functionality. You should only return the refactored code, without any explanations or comments.',
+    )
+
+    user_prompts = [
+        UserPrompt(id=str(path), prompt=content)
+        for path, content in file_to_str_gen(
+            CODE_DIR_TO_REFACTOR, LANGUAGE_EXTENSION
+        )
+    ]
+
+    outputs = refactoring_agent(
+        llm_handler=llm_handler, models=MODELS, user_prompts=user_prompts
+    )
+
+    for output in outputs:
+        makedirs(OUTPUT_DIR / output['model'], exist_ok=True)
+        makedirs(
+            OUTPUT_DIR / output['model'] / Path(output['id']).parent,
+            exist_ok=True,
+        )
+
+        with open(
+            OUTPUT_DIR / output['model'] / output['id'], 'w', encoding='utf-8'
+        ) as f:
+            f.write(output['refactored_code'])
+
+        with open(OUTPUT_DIR / 'energy_used.csv', 'a', encoding='utf-8') as f:
+            f.write(
+                f'{output["model"]},{output["id"]},{output["energy_consumed"]}\n'
+            )
+
+
+if __name__ == '__main__':
+    runner()

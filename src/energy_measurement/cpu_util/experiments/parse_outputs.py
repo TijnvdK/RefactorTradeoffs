@@ -1,9 +1,12 @@
+from logging import getLogger
 from pathlib import Path
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import numpy as np
 import polars as pl
 from re import compile as re_compile, IGNORECASE
+
+logger = getLogger(__name__)
 
 FILENAME_RE = re_compile(
     r'cpu_util_hz(\d+)_load(\d+)_duration(\d+)\.csv$', IGNORECASE
@@ -33,7 +36,9 @@ def load_files(directory: Path) -> pl.DataFrame:
     for path in sorted(directory.glob('cpu_util_hz*.csv')):
         match = FILENAME_RE.match(path.name)
         if not match:
-            print(f'Skipping (unrecognized filename format): {path.name}')
+            logger.warning(
+                f'Skipping (unrecognized filename format): {path.name}'
+            )
             continue
 
         hz, cpu_load, duration = (
@@ -54,7 +59,7 @@ def load_files(directory: Path) -> pl.DataFrame:
     if not frames:
         raise ValueError(f'No valid CSV files found in directory: {directory}')
 
-    print(f'Loaded {len(frames)} files from {directory}')
+    logger.info(f'Loaded {len(frames)} files from {directory}')
     return pl.concat(frames)
 
 

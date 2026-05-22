@@ -12,6 +12,7 @@ logger = getLogger(__name__)
 
 class RefactoringAgentOutput(TypedDict):
     id: str
+    model: str
     energy_consumed: float
     refactored_code: str
 
@@ -28,7 +29,7 @@ _CODE_TRAILING_FENCH = re_compile(r'^(.*?)\n?```', re_DOTALL)
 
 
 def parse_refactored_code(raw_output: str) -> str:
-    """
+    r"""
     Parses the raw output from the LLM to extract the refactored code snippet.
     The function considers the following cases (the function extracts {code}):
     1. \`\`\`{code}\`\`\` w and w/o {language} tag
@@ -75,7 +76,6 @@ def parse_refactored_code(raw_output: str) -> str:
 def agent(
     llm_handler: BackendHandler,
     models: List[str],
-    sys_prompts: List[str],
     user_prompts: List[UserPrompt],
 ) -> List[RefactoringAgentOutput]:
     """
@@ -86,7 +86,6 @@ def agent(
         llm_handler (BackendHandler): The backend handler to use for
         interacting with the LLM.
         models (List[str]): The list of models to use.
-        sys_prompts (List[str]): The list of system prompts to use.
         user_prompts (List[UserPrompt]): The list of user prompts to use.
 
     Returns:
@@ -98,44 +97,51 @@ def agent(
     result: List[RefactoringAgentOutput] = []
     for model in models:
         llm_handler.change_model(model)
-        for sys_prompt in sys_prompts:
-            llm_handler.change_system_prompt(sys_prompt)
-            for user_prompt in user_prompts:
-                id, prompt = user_prompt['id'], user_prompt['prompt']
+        for index, user_prompt in enumerate(user_prompts):
+            logger.info(
+                f'Trying to refactor prompt {index}/{len(user_prompts) - 1} with model {model}...'
+            )
 
-                gpu_energy_meter.start()
+            id, prompt = user_prompt['id'], user_prompt['prompt']
 
-                refactored_code_unparsed = ''
-                try:
-                    refactored_code_unparsed = llm_handler.send_message(
-                        f'```{prompt}```'
-                    )
-                except LMCallFailed as e:
-                    print(
-                        'Error occurred while sending message for model '
-                        f'{model}: {e}'
-                    )
+            gpu_energy_meter.start()
 
-                energy_consumed = gpu_energy_meter.stop()
-
-                if len(refactored_code_unparsed) == 0:
-                    logger.warning(
-                        f'No refactored code received for model {model} with '
-                        f'system prompt "{sys_prompt}" and user prompt '
-                        f'"{prompt}". Skipping.'
-                    )
-                    continue
-
-                parsed_refactored_code = parse_refactored_code(
-                    refactored_code_unparsed
+            refactored_code_unparsed = ''
+            try:
+                refactored_code_unparsed = llm_handler.send_message(
+                    f'```{prompt}```'
+                )
+            except LMCallFailed as e:
+                logger.error(
+                    'Error occurred while sending message for model '
+                    f'{model}: {e}'
                 )
 
-                result.append(
-                    RefactoringAgentOutput(
-                        id=id,
-                        energy_consumed=energy_consumed,
-                        refactored_code=parsed_refactored_code,
-                    )
+            energy_consumed = gpu_energy_meter.stop()
+
+            if len(refactored_code_unparsed) == 0:
+                logger.warning(
+                    f'No refactored code received for model {model} with '
+                    f'prompt "{id}". Skipping.'
                 )
+                continue
+
+            parsed_refactored_code = parse_refactored_code(
+                refactored_code_unparsed
+            )
+
+            logger.info(
+                f'Model {model} refactored code for prompt "{id}" '
+                f'with energy consumption {energy_consumed:.4f} J.'
+            )
+
+            result.append(
+                RefactoringAgentOutput(
+                    id=id,
+                    model=model,
+                    energy_consumed=energy_consumed,
+                    refactored_code=parsed_refactored_code,
+                )
+            )
 
     return result

@@ -1,3 +1,6 @@
 [submodule "src/energy_measurement/cpu_util/cloud-energy"]
     path = src/energy_measurement/cpu_util/cloud-energy
     url = https://github.com/green-coding-solutions/cloud-energy.git
+[submodule "datasets/OpenConext-engineblock"]
+    path = datasets/OpenConext-engineblock
+    url = https://github.com/OpenConext/OpenConext-engineblock.git
