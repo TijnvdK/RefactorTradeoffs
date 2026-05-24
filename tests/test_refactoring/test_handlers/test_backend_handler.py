@@ -1,6 +1,6 @@
 import pytest
 
-from src.refactoring.llm_interaction.handlers.interface.backend_handler import (
+from src.refactoring.handlers.interface.backend_handler import (
     BackendHandler,
 )
 from tests.random_generate_functions import (

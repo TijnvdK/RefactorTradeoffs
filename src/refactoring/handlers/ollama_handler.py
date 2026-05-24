@@ -4,7 +4,7 @@ from typing import Optional
 from ollama import ChatResponse, Client, ResponseError
 
 from src.globals.custom_exceptions import LMCallFailed
-from src.refactoring.llm_interaction.handlers.interface.backend_handler import (
+from src.refactoring.handlers.interface.backend_handler import (
     BackendHandler,
 )
 

@@ -7,7 +7,7 @@ from vllm.entrypoints.chat_utils import ChatCompletionMessageParam
 from vllm.distributed.parallel_state import destroy_model_parallel
 
 from src.globals.custom_exceptions import LMCallFailed
-from src.refactoring.llm_interaction.handlers.interface.backend_handler import (
+from src.refactoring.handlers.interface.backend_handler import (
     BackendHandler,
 )
 

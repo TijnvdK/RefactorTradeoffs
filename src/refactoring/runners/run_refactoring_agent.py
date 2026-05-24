@@ -4,16 +4,15 @@ from os import makedirs
 from pathlib import Path
 import sys
 
+from src.refactoring.agents.refactoring_agent import refactoring_agent
+
 if find_spec('src') is None:
     repo_root = Path(__file__).resolve().parents[1]
     sys.path.insert(0, str(repo_root))
 
+from src.globals.types import UserPrompt
 from src.utils import file_to_str_gen
-from src.refactoring.llm_interaction.agents.refactoring_agent import (
-    UserPrompt,
-    agent as refactoring_agent,
-)
-from src.refactoring.llm_interaction.handlers.vllm_handler import VLLMHandler
+from src.refactoring.handlers.vllm_handler import VLLMHandler
 
 logger = getLogger(__name__)
 
@@ -29,7 +28,7 @@ MODELS = [
 ]
 
 
-def runner():
+def run_refactoring_agent():
     makedirs(OUTPUT_DIR, exist_ok=True)
 
     llm_handler = VLLMHandler(
@@ -40,33 +39,19 @@ def runner():
     )
 
     user_prompts = [
-        UserPrompt(id=str(path), prompt=content)
+        UserPrompt(php_file=str(path), prompt=content)
         for path, content in file_to_str_gen(
             CODE_DIR_TO_REFACTOR, LANGUAGE_EXTENSION
         )
     ]
 
-    outputs = refactoring_agent(
-        llm_handler=llm_handler, models=MODELS, user_prompts=user_prompts
+    refactoring_agent(
+        llm_handler=llm_handler,
+        models=MODELS,
+        user_prompts=user_prompts,
+        output_path=OUTPUT_DIR / 'results_refactoring_agent.json',
     )
-
-    for output in outputs:
-        makedirs(OUTPUT_DIR / output['model'], exist_ok=True)
-        makedirs(
-            OUTPUT_DIR / output['model'] / Path(output['id']).parent,
-            exist_ok=True,
-        )
-
-        with open(
-            OUTPUT_DIR / output['model'] / output['id'], 'w', encoding='utf-8'
-        ) as f:
-            f.write(output['refactored_code'])
-
-        with open(OUTPUT_DIR / 'energy_used.csv', 'a', encoding='utf-8') as f:
-            f.write(
-                f'{output["model"]},{output["id"]},{output["energy_consumed"]}\n'
-            )
 
 
 if __name__ == '__main__':
-    runner()
+    run_refactoring_agent()
