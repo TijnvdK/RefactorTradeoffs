@@ -136,6 +136,12 @@ def is_valid_php_code(code: str) -> bool:
     Returns:
         bool: True if the code is valid, False otherwise.
     """
+    stripped = code.strip()
+    if not stripped or not (
+        stripped.startswith('<?php') or stripped.startswith('<?')
+    ):
+        return False
+
     with NamedTemporaryFile(suffix='.php', mode='w', delete=False) as f:
         f.write(code)
         tmp = f.name

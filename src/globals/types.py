@@ -7,6 +7,7 @@ class CodeRecord(TypedDict):
     code: str
     energy_consumed_refactor: float
     energy_consumed_fix: Optional[float]
+    total_energy_consumed: float
     amount_of_refactoring_retries: Optional[int]
     amount_of_fix_retries: Optional[int]
     error_output: Optional[str]

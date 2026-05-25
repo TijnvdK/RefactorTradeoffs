@@ -26,13 +26,18 @@ def refactoring_agent(
             prompt, php_file = user_prompt['prompt'], user_prompt['php_file']
 
             energy_consumed = 0.0
+            total_energy_consumed = 0.0
+
             retries_needed = None
             output_code = ''
 
             for attempt in range(max_attempts):
                 parsed_code, energy_consumed = call_llm(
-                    llm_handler, f'```{prompt}```'
+                    llm_handler,
+                    f'Refactor this code to be more efficient and green, with equivalent functionality.\n```{prompt}```',
                 )
+
+                total_energy_consumed += energy_consumed
 
                 if parsed_code:
                     if is_valid_php_code(parsed_code):
@@ -48,6 +53,7 @@ def refactoring_agent(
                     code=output_code,
                     energy_consumed_refactor=energy_consumed,
                     energy_consumed_fix=None,
+                    total_energy_consumed=total_energy_consumed,
                     amount_of_refactoring_retries=retries_needed,
                     amount_of_fix_retries=None,
                     error_output=None,
