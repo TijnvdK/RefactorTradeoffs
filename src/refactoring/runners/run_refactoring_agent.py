@@ -34,6 +34,7 @@ def run_refactoring_agent():
         gpu_memory_utilization=0.8,
         max_model_len=32768,
         max_tokens=16384,
+        timeout=300,
         system_prompt='You are a green software expert. You will receive PHP code snippets and you need to refactor the code snippet to be more efficient and green, with equivalent functionality. Return only the raw refactored PHP code in a markdown code block. Do not include explanations or any text other than the PHP code itself. If the input is not valid PHP, return the original code unchanged.',
     )
 

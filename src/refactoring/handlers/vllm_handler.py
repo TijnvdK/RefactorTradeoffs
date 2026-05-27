@@ -1,24 +1,42 @@
-from logging import INFO, StreamHandler, basicConfig, getLogger
-from sys import stdout
+from logging import getLogger
+from multiprocessing import Process, Queue
 from typing import Optional
+from queue import Empty
+from atexit import register as atexit_register
 
 from vllm import LLM, SamplingParams
 from vllm.entrypoints.chat_utils import ChatCompletionMessageParam
-from vllm.distributed.parallel_state import destroy_model_parallel
 
 from src.globals.custom_exceptions import LMCallFailed
 from src.refactoring.handlers.interface.backend_handler import (
     BackendHandler,
 )
 
-
-basicConfig(
-    level=INFO,
-    handlers=[StreamHandler(stdout)],
-    format='%(asctime)s %(levelname)s %(name)s: %(message)s',
-)
-
 logger = getLogger(__name__)
+
+
+def _worker(
+    model: str,
+    gpu_memory_utilization: float,
+    max_model_len: int,
+    in_queue: Queue,
+    out_queue: Queue,
+) -> None:
+    llm = LLM(
+        model=model,
+        gpu_memory_utilization=gpu_memory_utilization,
+        max_model_len=max_model_len,
+    )
+    out_queue.put('ready')
+    while True:
+        messages, sampling_params = in_queue.get()
+        try:
+            outputs = llm.chat(
+                messages=messages, sampling_params=sampling_params
+            )
+            out_queue.put(('ok', outputs[0].outputs[0].text))
+        except Exception as e:
+            out_queue.put(('err', str(e)))
 
 
 class VLLMHandler(BackendHandler):
@@ -56,25 +74,51 @@ class VLLMHandler(BackendHandler):
         self._gpu_memory_utilization = gpu_memory_utilization
         self._max_model_len = max_model_len
         self._max_tokens = max_tokens
-        self._llm: Optional[LLM] = None
+
+        self._worker: Optional[Process] = None
+        self._in_queue: Optional[Queue] = None
+        self._out_queue: Optional[Queue] = None
+
+        atexit_register(self._stop_worker)
+
+    def _start_worker(self) -> None:
+        self._in_queue = Queue()
+        self._out_queue = Queue()
+        self._worker = Process(
+            target=_worker,
+            args=(
+                self.model,
+                self._gpu_memory_utilization,
+                self._max_model_len,
+                self._in_queue,
+                self._out_queue,
+            ),
+        )
+        self._worker.start()
+        self._out_queue.get()  # block until worker signals 'ready'
+
+    def _stop_worker(self) -> None:
+        if self._worker is not None and self._worker.is_alive():
+            self._worker.kill()
+            self._worker.join()
+        self._worker = None
+        self._in_queue = None
+        self._out_queue = None
 
     def change_model(self, new_model: str) -> None:
-        if self._llm is not None:
-            # Remove the existing model from GPU memory before changing to a
-            # new model
-            destroy_model_parallel()
-            self._llm = None
-
+        self._stop_worker()
         super().change_model(new_model)
-        self._llm = LLM(
-            model=self.model,
-            gpu_memory_utilization=self._gpu_memory_utilization,
-            max_model_len=self._max_model_len,
-        )
+        self._start_worker()
 
     def send_message(self, user_prompt: str) -> str:
-        if self._llm is None:
+        if self._worker is None:
             logger.error('LLM is not initialized. Call change_model() first.')
+            raise LMCallFailed
+
+        if self._in_queue is None or self._out_queue is None:
+            logger.error(
+                'Worker queues are not initialized. Call change_model() first.'
+            )
             raise LMCallFailed
 
         messages: list[ChatCompletionMessageParam] = [
@@ -82,7 +126,6 @@ class VLLMHandler(BackendHandler):
             {'role': 'user', 'content': user_prompt},
         ]
 
-        sampling_params = None
         if self._temperature is not None:
             sampling_params = SamplingParams(
                 temperature=self._temperature,
@@ -95,19 +138,23 @@ class VLLMHandler(BackendHandler):
                 stop=['<|file_sep|>', '<|im_end|>'],
             )
 
+        self._in_queue.put((messages, sampling_params))
+
         try:
-            outputs = self._llm.chat(
-                messages=messages,
-                sampling_params=sampling_params,
-            )
-        except Exception as error_:
-            logger.error(f'Error communicating with vLLM: {error_}')
+            result = self._out_queue.get(timeout=self._timeout)
+        except Empty:
+            logger.error(f'vLLM call timed out after {self._timeout}s')
+            self._stop_worker()
+            self._start_worker()
             raise LMCallFailed
 
-        output = outputs[0].outputs[0].text
+        status, value = result
+        if status == 'err':
+            logger.error(f'Error communicating with vLLM: {value}')
+            raise LMCallFailed
 
-        if output is None:
+        if value is None:
             logger.error('Received no response from vLLM.')
             raise LMCallFailed
 
-        return output
+        return value
