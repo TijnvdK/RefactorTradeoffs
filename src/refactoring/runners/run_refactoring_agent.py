@@ -15,8 +15,8 @@ from src.refactoring.handlers.vllm_handler import VLLMHandler
 
 logger = getLogger(__name__)
 
-CODE_DIR_TO_REFACTOR = Path('./datasets/OpenConext-engineblock/src')
-OUTPUT_DIR = Path('./datasets/OpenConext-engineblock-refactored')
+CODE_DIR_TO_REFACTOR = Path('./datasets/OpenContext-engineblock/src')
+OUTPUT_DIR = Path('./data/OpenContext-engineblock/file_based_refactoring')
 LANGUAGE_EXTENSION = '.php'
 
 MODELS = [

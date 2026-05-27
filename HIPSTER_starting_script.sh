@@ -9,9 +9,8 @@ set +a
 
 nvidia-smi
 
-export HF_TOKEN=""
-export LD_LIBRARY_PATH=/usr/lib64:$LD_LIBRARY_PATH
-export PATH=/usr/bin:$PATH
+# export LD_LIBRARY_PATH=/usr/lib64:$LD_LIBRARY_PATH
+# export PATH=/usr/bin:$PATH
 
 source "./.venv/bin/activate"
-python "./src/runner.py"
+python "./src/refactoring/runners/run_refactoring_agent.py"
