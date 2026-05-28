@@ -31,13 +31,13 @@ def file_to_str_gen(
         extension (str): The file extension to filter by (e.g., '.php').
 
     Yields:
-        Tuple[Path, str]: A tuple containing the relative file path from
-            dir_path and the file content as a string.
+        Tuple[Path, str]: A tuple containing the absolute file path and
+            the file content as a string.
     """
 
     for file in dir_path.glob(f'**/*{extension}'):
         with open(file, 'r', encoding='utf-8') as f:
-            yield (file.relative_to(dir_path), f.read())
+            yield (file, f.read())
 
 
 _CODE_FENCED = re_compile(
