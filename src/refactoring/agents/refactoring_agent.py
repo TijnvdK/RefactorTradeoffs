@@ -18,6 +18,20 @@ def refactoring_agent(
     output_path: Path,
     max_attempts: int = 5,
 ) -> None:
+    """
+    Generate refactored PHP code for each model and prompt via the LLM.
+
+    Args:
+        llm_handler: Backend handler used to call the LLM.
+        models: List of model identifiers to evaluate.
+        user_prompts: Prompt records containing the PHP code and source file.
+        output_path: Path to write the JSON output file.
+        max_attempts: Maximum number of LLM attempts per prompt.
+
+    Side Effects:
+        Writes JSON output to `output_path`.
+    """
+
     result: List[CodeRecord] = []
     for model in models:
         llm_handler.change_model(model)

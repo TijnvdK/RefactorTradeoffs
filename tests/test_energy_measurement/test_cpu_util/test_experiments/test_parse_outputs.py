@@ -1,7 +1,7 @@
 import pytest
 import polars as pl
 from pathlib import Path
-from src.energy_measurement.cpu_util.experiments.parse_outputs import load_files
+from src.measure_energy.cpu_util.experiments.parse_outputs import load_files
 
 EXPECTED_SCHEMA = {
     'sample': pl.Int64,

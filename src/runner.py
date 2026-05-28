@@ -24,9 +24,16 @@ logger = getLogger(__name__)
 ##
 CWD = Path.cwd()
 
+# TARGET_REPOSITORY is the root of the repository that needs to be refactored.
 TARGET_REPOSITORY = CWD / 'datasets/OpenContext-engineblock'
+# FOLDER_TO_REFACTOR is the folder in the repository that is to be refactored.
+# This can be the same as `TARGET_REPOSITORY` if the entire repository is to
+# be refactored.
 FOLDER_TO_REFACTOR = TARGET_REPOSITORY / 'src'
+# PROGRAMMING_LANGUAGE is the programming language of the code snippets that
+# are being refactored.
 PROGRAMMING_LANGUAGE = 'PHP'
+# OUTPUT_DIR is the directory where the results of all agents will be stored.
 OUTPUT_DIR = CWD / 'data/OpenContext-engineblock/file_based_refactoring'
 
 ###

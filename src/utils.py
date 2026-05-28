@@ -104,7 +104,7 @@ def call_llm(llm_handler: BackendHandler, prompt: str) -> Tuple[str, float]:
             the energy consumed in joules.
     """
     try:
-        from src.energy_measurement.nvidia_gpu.nvidia_smi_wrapper import (
+        from src.measure_energy.nvidia_gpu.nvidia_smi_wrapper import (
             GPUEnergyMeter,
         )
     except ModuleNotFoundError as exc:

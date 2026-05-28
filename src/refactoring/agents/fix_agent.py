@@ -12,6 +12,19 @@ def fix_agent(
     output_path: Path,
     max_attempts: int = 5,
 ) -> None:
+    """
+    Attempt to fix PHP code records that contain error output by querying the LLM.
+
+    Args:
+        llm_handler: Backend handler used to call the LLM.
+        input_path: Path to the input JSON file containing code records.
+        output_path: Path to write the updated JSON records.
+        max_attempts: Maximum number of LLM attempts per record.
+
+    Side Effects:
+        Reads from `input_path` and writes to `output_path`.
+    """
+
     code_records: List[CodeRecord] = json_loads(input_path.read_text())
     result: List[CodeRecord] = []
 

@@ -13,6 +13,22 @@ def verification_agent(
     original_code_path: Path,
     verifier: Callable[[Path, Path, str], Tuple[bool, str]],
 ) -> bool:
+    """
+    Verify refactored code records and record any verification errors.
+
+    Args:
+        input_path: Path to the JSON file containing code records to verify.
+        output_path: Path to write the updated records with verification results.
+        original_code_path: Root path to the original code base used by the verifier.
+        verifier: Callable returning `(passed, error_message)` for the given input.
+
+    Returns:
+        True if all records pass verification; otherwise False.
+
+    Side Effects:
+        Reads from `input_path` and writes to `output_path`.
+    """
+
     code_records: List[CodeRecord] = json_loads(input_path.read_text())
     result: List[CodeRecord] = []
 

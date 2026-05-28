@@ -35,6 +35,17 @@ PHPUNIT_SUITES = [
 
 
 def _parse_phpunit_output(xml_output: str) -> str:
+    """
+    Parses the XML output from PHPUnit to extract failure information.
+
+    Args:
+        xml_output (str): The raw XML output from PHPUnit.
+
+    Returns:
+        str: A formatted string containing failure information, or an empty
+            string if there are no failures.
+    """
+
     if not xml_output.strip():
         return ''
 
@@ -64,6 +75,7 @@ def _parse_phpunit_output(xml_output: str) -> str:
 def _compose_run(
     compose_cmd: list[str], args: list[str], cwd: str
 ) -> CompletedProcess:
+    """Runs a Docker Compose command and returns the result."""
     return subprocess_run(
         compose_cmd + args, capture_output=True, text=True, cwd=cwd
     )
@@ -72,6 +84,7 @@ def _compose_run(
 def _container_exec(
     compose_cmd: list[str], cwd: str, script: str
 ) -> CompletedProcess:
+    """Executes a command inside the Docker container and returns the result."""
     return _compose_run(
         compose_cmd,
         ['exec', '-T', 'engine.dev.openconext.local', 'bash', '-c', script],
@@ -82,6 +95,27 @@ def _container_exec(
 def engineblock_verifier(
     engineblock_root: Path, php_file: Path, code: str
 ) -> Tuple[bool, str]:
+    """
+    Verify if replacing the file at `php_file` with `code` still results
+    in a valid engineblock repository. The correctness is verified using the
+    phpunit tests within the engineblock repository.
+
+    This function will run the environment within a Docker container, so this
+    function needs to be run on a machine with Docker installed.
+
+    Args:
+        engineblock_root (Path): Path to the root of a original and verified
+            engineblock repository.
+        php_file (Path): Path to the PHP file being verified.
+        code (str): The refactored code that should replace the content
+            of `php_file`.
+
+    Returns:
+        Tuple[bool, str]: A tuple containing a boolean indicating whether the
+            verification was successful and a string containing any failure
+            information.
+    """
+
     relative_path = php_file.relative_to(engineblock_root)
     project_name = f'phpunit_{uuid4()}'
     temp_dir = Path(mkdtemp(prefix='phpunit_tmp_'))
