@@ -13,4 +13,6 @@ nvidia-smi
 # export PATH=/usr/bin:$PATH
 
 source "./.venv/bin/activate"
-python "./src/refactoring/runners/run_refactoring_agent.py"
+export PYTHONPATH="$(pwd):${PYTHONPATH}"
+python "./src/runner.py" --agent refactoring --model Qwen/Qwen2.5-Coder-1.5B
+# python "./src/runner.py" --agent verification --model Qwen/Qwen2.5-Coder-1.5B --iteration 0

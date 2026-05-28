@@ -32,7 +32,7 @@ TARGET_REPOSITORY = CWD / 'datasets/OpenContext-engineblock'
 FOLDER_TO_REFACTOR = TARGET_REPOSITORY / 'src'
 # PROGRAMMING_LANGUAGE is the programming language of the code snippets that
 # are being refactored.
-PROGRAMMING_LANGUAGE = 'PHP'
+PROGRAMMING_LANGUAGE = '.php'
 # OUTPUT_DIR is the directory where the results of all agents will be stored.
 OUTPUT_DIR = CWD / 'data/OpenContext-engineblock/file_based_refactoring'
 

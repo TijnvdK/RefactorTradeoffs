@@ -87,7 +87,7 @@ class VLLMHandler(BackendHandler):
         self._worker = Process(
             target=_worker,
             args=(
-                self.model,
+                self._model,
                 self._gpu_memory_utilization,
                 self._max_model_len,
                 self._in_queue,
