@@ -1,23 +1,7 @@
-import pytest
-
-from src.refactoring.handlers.interface.backend_handler import (
-    BackendHandler,
-)
 from tests.random_generate_functions import (
     generate_random_float,
     generate_random_string,
 )
-
-
-@pytest.fixture
-def backend_handler():
-    class HandlerTester(BackendHandler):
-        def send_message(self, user_prompt: str) -> str:
-            return f'This is mocked response to: {user_prompt}'
-
-    return HandlerTester(
-        system_prompt='system', model='model', temperature=0.5, timeout=30
-    )
 
 
 class TestBackendHandler:

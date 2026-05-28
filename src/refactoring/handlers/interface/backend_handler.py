@@ -24,23 +24,6 @@ class BackendHandler(ABC):
         self._temperature = temperature
         self._timeout = timeout
 
-    @property
-    def model(self) -> str:
-        """
-        Get the model, raising an error if not defined.
-
-        Returns:
-            str: The model name.
-
-        Raises:
-            ValueError: If model is not defined.
-        """
-        if self._model is None:
-            raise ValueError(
-                'Model is not defined. Please set the model before accessing it.'
-            )
-        return self._model
-
     def change_system_prompt(self, new_system_prompt: str) -> None:
         """
         Change the system prompt for the backend handler.

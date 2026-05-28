@@ -41,7 +41,7 @@ def refactoring_agent(
 
                 if parsed_code:
                     if is_valid_php_code(parsed_code):
-                        retries_needed = attempt
+                        retries_needed = attempt + 1  # indexing
                         output_code = parsed_code
 
                         break
