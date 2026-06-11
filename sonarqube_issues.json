@@ -1,0 +1,1434 @@
+[
+    {
+        "rule_key": "php:S2003",
+        "severity": "MINOR",
+        "file_path": "EngineBlock:Kernel.php",
+        "line": 36,
+        "debt_minutes": 5,
+        "message": "Replace \"require\" with \"require_once\"."
+    },
+    {
+        "rule_key": "php:S3776",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Entity/Assembler/PushMetadataAssembler.php",
+        "line": 87,
+        "debt_minutes": 32,
+        "message": "Refactor this function to reduce its Cognitive Complexity from 42 to the 15 allowed."
+    },
+    {
+        "rule_key": "php:S1488",
+        "severity": "MINOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/MetadataRepository/DoctrineMetadataPushRepository.php",
+        "line": 181,
+        "debt_minutes": 2,
+        "message": "Immediately return this expression instead of assigning it to the temporary variable \"$result\"."
+    },
+    {
+        "rule_key": "php:S107",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockBundle/Controller/IdentityProviderController.php",
+        "line": 85,
+        "debt_minutes": 20,
+        "message": "This function has 9 parameters, which is greater than the 7 authorized."
+    },
+    {
+        "rule_key": "php:S1185",
+        "severity": "MINOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockBundle/Doctrine/Type/MetadataCoinType.php",
+        "line": 58,
+        "debt_minutes": 2,
+        "message": "Remove this method \"getMappedDatabaseTypes\" to simply inherit it."
+    },
+    {
+        "rule_key": "php:S3776",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlockBundle/EventListener/RedirectToFeedbackPageExceptionListener.php",
+        "line": 106,
+        "debt_minutes": 24,
+        "message": "Refactor this function to reduce its Cognitive Complexity from 34 to the 15 allowed."
+    },
+    {
+        "rule_key": "php:S3776",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlockBundle/Pdp/PolicyDecision.php",
+        "line": 63,
+        "debt_minutes": 7,
+        "message": "Refactor this function to reduce its Cognitive Complexity from 17 to the 15 allowed."
+    },
+    {
+        "rule_key": "php:S107",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Features/Context/EngineBlockContext.php",
+        "line": 134,
+        "debt_minutes": 20,
+        "message": "This function has 9 parameters, which is greater than the 7 authorized."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Features/Context/MinkContext.php",
+        "line": 261,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S3358",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Mock/AbstractMockEntityRole.php",
+        "line": 138,
+        "debt_minutes": 5,
+        "message": "Extract this nested ternary operation into an independent statement."
+    },
+    {
+        "rule_key": "php:S1186",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Service/EngineBlock.php",
+        "line": 34,
+        "debt_minutes": 5,
+        "message": "Add a nested comment explaining why this method is empty, throw an Exception or complete the implementation."
+    },
+    {
+        "rule_key": "php:S107",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Coins.php",
+        "line": 70,
+        "debt_minutes": 20,
+        "message": "This function has 10 parameters, which is greater than the 7 authorized."
+    },
+    {
+        "rule_key": "php:S107",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Entity/IdentityProvider.php",
+        "line": 99,
+        "debt_minutes": 20,
+        "message": "This function has 41 parameters, which is greater than the 7 authorized."
+    },
+    {
+        "rule_key": "php:S1172",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockBundle/Controller/FeedbackController.php",
+        "line": 225,
+        "debt_minutes": 5,
+        "message": "Remove the unused function parameter \"$request\"."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Features/Context/EngineBlockContext.php",
+        "line": 371,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S3776",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Helper/TestEntitySeeder.php",
+        "line": 43,
+        "debt_minutes": 7,
+        "message": "Refactor this function to reduce its Cognitive Complexity from 17 to the 15 allowed."
+    },
+    {
+        "rule_key": "php:S1192",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Helper/TestEntitySeeder.php",
+        "line": 70,
+        "debt_minutes": 12,
+        "message": "Define a constant instead of duplicating this literal \"/images/logo.png\" 5 times."
+    },
+    {
+        "rule_key": "php:S107",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Coins.php",
+        "line": 32,
+        "debt_minutes": 20,
+        "message": "This function has 16 parameters, which is greater than the 7 authorized."
+    },
+    {
+        "rule_key": "php:S107",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Entity/ServiceProvider.php",
+        "line": 100,
+        "debt_minutes": 20,
+        "message": "This function has 50 parameters, which is greater than the 7 authorized."
+    },
+    {
+        "rule_key": "php:S1192",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlockBundle/Controller/MetadataController.php",
+        "line": 62,
+        "debt_minutes": 10,
+        "message": "Define a constant instead of duplicating this literal \"application/samlmetadata+xml\" 4 times."
+    },
+    {
+        "rule_key": "php:S107",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Logger/AuthenticationLogger.php",
+        "line": 48,
+        "debt_minutes": 20,
+        "message": "This function has 11 parameters, which is greater than the 7 authorized."
+    },
+    {
+        "rule_key": "php:S107",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockBridge/Logger/AuthenticationLoggerAdapter.php",
+        "line": 57,
+        "debt_minutes": 20,
+        "message": "This function has 10 parameters, which is greater than the 7 authorized."
+    },
+    {
+        "rule_key": "php:S1172",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockBundle/Authentication/Service/SamlResponseHelper.php",
+        "line": 43,
+        "debt_minutes": 5,
+        "message": "Remove the unused function parameter \"$idpEntityId\"."
+    },
+    {
+        "rule_key": "php:S1155",
+        "severity": "MINOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Entity/Assembler/PushMetadataAssembler.php",
+        "line": 177,
+        "debt_minutes": 2,
+        "message": "Use empty() to check whether the array is empty or not."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Entity/Assembler/PushMetadataAssembler.php",
+        "line": 178,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S107",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Entity/AbstractRole.php",
+        "line": 239,
+        "debt_minutes": 20,
+        "message": "This function has 26 parameters, which is greater than the 7 authorized."
+    },
+    {
+        "rule_key": "php:S4144",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Factory/Decorator/EngineBlockServiceProviderInformation.php",
+        "line": 48,
+        "debt_minutes": 15,
+        "message": "Update this method so that its implementation is not identical to \"getName\" on line 43."
+    },
+    {
+        "rule_key": "php:S1488",
+        "severity": "MINOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Factory/Factory/IdentityProviderFactory.php",
+        "line": 82,
+        "debt_minutes": 2,
+        "message": "Immediately return this expression instead of assigning it to the temporary variable \"$entity\"."
+    },
+    {
+        "rule_key": "php:S1488",
+        "severity": "MINOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Factory/Factory/ServiceProviderFactory.php",
+        "line": 132,
+        "debt_minutes": 2,
+        "message": "Immediately return this expression instead of assigning it to the temporary variable \"$entity\"."
+    },
+    {
+        "rule_key": "php:S1448",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Mdui.php",
+        "line": 44,
+        "debt_minutes": 60,
+        "message": "Class \"Mdui\" has 22 methods, which is greater than 20 authorized. Split it into smaller classes."
+    },
+    {
+        "rule_key": "php:S3011",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Fixtures/ServiceRegistryFixture.php",
+        "line": 605,
+        "debt_minutes": 30,
+        "message": "Make sure that this accessibility bypass is safe here."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Features/Context/EngineBlockContext.php",
+        "line": 616,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S3699",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Features/Context/EngineBlockContext.php",
+        "line": 633,
+        "debt_minutes": 5,
+        "message": "Remove this use of the output from \"EngineBlockContext::theAuthnRequestToSubmitShouldMatchXpath\"; \"EngineBlockContext::theAuthnRequestToSubmitShouldMatchXpath\" doesn't return anything."
+    },
+    {
+        "rule_key": "php:S3776",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlockBundle/Controller/WayfController.php",
+        "line": 127,
+        "debt_minutes": 19,
+        "message": "Refactor this function to reduce its Cognitive Complexity from 29 to the 15 allowed."
+    },
+    {
+        "rule_key": "php:S1192",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Features/Context/MinkContext.php",
+        "line": 91,
+        "debt_minutes": 8,
+        "message": "Define a constant instead of duplicating this literal \"/samlp:Response/saml:Assertion/saml:AttributeStatement/saml:Attribute\" 3 times."
+    },
+    {
+        "rule_key": "php:S6600",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Stepup/StepupDecision.php",
+        "line": 105,
+        "debt_minutes": 2,
+        "message": "Remove the parentheses from this \"return\" call."
+    },
+    {
+        "rule_key": "php:S1155",
+        "severity": "MINOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Stepup/StepupDecision.php",
+        "line": 124,
+        "debt_minutes": 2,
+        "message": "Use empty() to check whether the array is empty or not."
+    },
+    {
+        "rule_key": "php:S1172",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Stepup/StepupEntityFactory.php",
+        "line": 34,
+        "debt_minutes": 5,
+        "message": "Remove the unused function parameter \"$acsLocation\"."
+    },
+    {
+        "rule_key": "php:S3776",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlockBundle/Pdp/Dto/Response.php",
+        "line": 69,
+        "debt_minutes": 34,
+        "message": "Refactor this function to reduce its Cognitive Complexity from 44 to the 15 allowed."
+    },
+    {
+        "rule_key": "php:S3626",
+        "severity": "MINOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockBundle/Pdp/PolicyDecision.php",
+        "line": 134,
+        "debt_minutes": 1,
+        "message": "Remove this redundant jump."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Features/Context/EngineBlockContext.php",
+        "line": 220,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Features/Context/EngineBlockContext.php",
+        "line": 242,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S1192",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Helper/TestEntitySeeder.php",
+        "line": 58,
+        "debt_minutes": 8,
+        "message": "Define a constant instead of duplicating this literal \"%s IdP %d %s\" 3 times."
+    },
+    {
+        "rule_key": "php:S1142",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Factory/Adapter/IdentityProviderEntity.php",
+        "line": 70,
+        "debt_minutes": 20,
+        "message": "This method has 4 returns, which is more than the 3 allowed."
+    },
+    {
+        "rule_key": "php:S131",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Factory/Adapter/IdentityProviderEntity.php",
+        "line": 72,
+        "debt_minutes": 5,
+        "message": "Add a \"case default\" clause to this \"switch\" statement."
+    },
+    {
+        "rule_key": "php:S6600",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Factory/Adapter/IdentityProviderEntity.php",
+        "line": 73,
+        "debt_minutes": 2,
+        "message": "Remove the parentheses from this \"case\" call."
+    },
+    {
+        "rule_key": "php:S6600",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Factory/Adapter/IdentityProviderEntity.php",
+        "line": 75,
+        "debt_minutes": 2,
+        "message": "Remove the parentheses from this \"case\" call."
+    },
+    {
+        "rule_key": "php:S6600",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Factory/Adapter/IdentityProviderEntity.php",
+        "line": 77,
+        "debt_minutes": 2,
+        "message": "Remove the parentheses from this \"case\" call."
+    },
+    {
+        "rule_key": "php:S1142",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Factory/Adapter/IdentityProviderEntity.php",
+        "line": 132,
+        "debt_minutes": 20,
+        "message": "This method has 4 returns, which is more than the 3 allowed."
+    },
+    {
+        "rule_key": "php:S131",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Factory/Adapter/IdentityProviderEntity.php",
+        "line": 134,
+        "debt_minutes": 5,
+        "message": "Add a \"case default\" clause to this \"switch\" statement."
+    },
+    {
+        "rule_key": "php:S6600",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Factory/Adapter/IdentityProviderEntity.php",
+        "line": 135,
+        "debt_minutes": 2,
+        "message": "Remove the parentheses from this \"case\" call."
+    },
+    {
+        "rule_key": "php:S6600",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Factory/Adapter/IdentityProviderEntity.php",
+        "line": 137,
+        "debt_minutes": 2,
+        "message": "Remove the parentheses from this \"case\" call."
+    },
+    {
+        "rule_key": "php:S6600",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Factory/Adapter/IdentityProviderEntity.php",
+        "line": 139,
+        "debt_minutes": 2,
+        "message": "Remove the parentheses from this \"case\" call."
+    },
+    {
+        "rule_key": "php:S1142",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Factory/Adapter/ServiceProviderEntity.php",
+        "line": 73,
+        "debt_minutes": 20,
+        "message": "This method has 4 returns, which is more than the 3 allowed."
+    },
+    {
+        "rule_key": "php:S131",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Factory/Adapter/ServiceProviderEntity.php",
+        "line": 75,
+        "debt_minutes": 5,
+        "message": "Add a \"case default\" clause to this \"switch\" statement."
+    },
+    {
+        "rule_key": "php:S6600",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Factory/Adapter/ServiceProviderEntity.php",
+        "line": 76,
+        "debt_minutes": 2,
+        "message": "Remove the parentheses from this \"case\" call."
+    },
+    {
+        "rule_key": "php:S6600",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Factory/Adapter/ServiceProviderEntity.php",
+        "line": 78,
+        "debt_minutes": 2,
+        "message": "Remove the parentheses from this \"case\" call."
+    },
+    {
+        "rule_key": "php:S6600",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Factory/Adapter/ServiceProviderEntity.php",
+        "line": 80,
+        "debt_minutes": 2,
+        "message": "Remove the parentheses from this \"case\" call."
+    },
+    {
+        "rule_key": "php:S1142",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Factory/Adapter/ServiceProviderEntity.php",
+        "line": 134,
+        "debt_minutes": 20,
+        "message": "This method has 4 returns, which is more than the 3 allowed."
+    },
+    {
+        "rule_key": "php:S131",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Factory/Adapter/ServiceProviderEntity.php",
+        "line": 136,
+        "debt_minutes": 5,
+        "message": "Add a \"case default\" clause to this \"switch\" statement."
+    },
+    {
+        "rule_key": "php:S6600",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Factory/Adapter/ServiceProviderEntity.php",
+        "line": 137,
+        "debt_minutes": 2,
+        "message": "Remove the parentheses from this \"case\" call."
+    },
+    {
+        "rule_key": "php:S6600",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Factory/Adapter/ServiceProviderEntity.php",
+        "line": 139,
+        "debt_minutes": 2,
+        "message": "Remove the parentheses from this \"case\" call."
+    },
+    {
+        "rule_key": "php:S6600",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Factory/Adapter/ServiceProviderEntity.php",
+        "line": 141,
+        "debt_minutes": 2,
+        "message": "Remove the parentheses from this \"case\" call."
+    },
+    {
+        "rule_key": "php:S1142",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Factory/Adapter/ServiceProviderEntity.php",
+        "line": 282,
+        "debt_minutes": 20,
+        "message": "This method has 4 returns, which is more than the 3 allowed."
+    },
+    {
+        "rule_key": "php:S131",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Factory/Adapter/ServiceProviderEntity.php",
+        "line": 284,
+        "debt_minutes": 5,
+        "message": "Add a \"case default\" clause to this \"switch\" statement."
+    },
+    {
+        "rule_key": "php:S6600",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Factory/Adapter/ServiceProviderEntity.php",
+        "line": 285,
+        "debt_minutes": 2,
+        "message": "Remove the parentheses from this \"case\" call."
+    },
+    {
+        "rule_key": "php:S6600",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Factory/Adapter/ServiceProviderEntity.php",
+        "line": 287,
+        "debt_minutes": 2,
+        "message": "Remove the parentheses from this \"case\" call."
+    },
+    {
+        "rule_key": "php:S6600",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Factory/Adapter/ServiceProviderEntity.php",
+        "line": 289,
+        "debt_minutes": 2,
+        "message": "Remove the parentheses from this \"case\" call."
+    },
+    {
+        "rule_key": "php:S4144",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Factory/Decorator/EngineBlockIdentityProviderInformation.php",
+        "line": 48,
+        "debt_minutes": 15,
+        "message": "Update this method so that its implementation is not identical to \"getName\" on line 43."
+    },
+    {
+        "rule_key": "php:S1488",
+        "severity": "MINOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Loa.php",
+        "line": 66,
+        "debt_minutes": 2,
+        "message": "Immediately return this expression instead of assigning it to the temporary variable \"$isHigherOrEqualTo\"."
+    },
+    {
+        "rule_key": "php:S1448",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Factory/Decorator/AbstractIdentityProvider.php",
+        "line": 37,
+        "debt_minutes": 60,
+        "message": "Class \"AbstractIdentityProvider\" has 25 methods, which is greater than 20 authorized. Split it into smaller classes."
+    },
+    {
+        "rule_key": "php:S1448",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Factory/Decorator/AbstractServiceProvider.php",
+        "line": 37,
+        "debt_minutes": 60,
+        "message": "Class \"AbstractServiceProvider\" has 28 methods, which is greater than 20 authorized. Split it into smaller classes."
+    },
+    {
+        "rule_key": "php:S1488",
+        "severity": "MINOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Xml/MetadataRenderer.php",
+        "line": 103,
+        "debt_minutes": 2,
+        "message": "Immediately return this expression instead of assigning it to the temporary variable \"$signedXml\"."
+    },
+    {
+        "rule_key": "php:S1488",
+        "severity": "MINOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Xml/MetadataRenderer.php",
+        "line": 114,
+        "debt_minutes": 2,
+        "message": "Immediately return this expression instead of assigning it to the temporary variable \"$signedXml\"."
+    },
+    {
+        "rule_key": "php:S1488",
+        "severity": "MINOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Xml/MetadataRenderer.php",
+        "line": 126,
+        "debt_minutes": 2,
+        "message": "Immediately return this expression instead of assigning it to the temporary variable \"$signedXml\"."
+    },
+    {
+        "rule_key": "php:S1448",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Factory/Adapter/IdentityProviderEntity.php",
+        "line": 38,
+        "debt_minutes": 60,
+        "message": "Class \"IdentityProviderEntity\" has 25 methods, which is greater than 20 authorized. Split it into smaller classes."
+    },
+    {
+        "rule_key": "php:S1448",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Factory/Adapter/ServiceProviderEntity.php",
+        "line": 41,
+        "debt_minutes": 60,
+        "message": "Class \"ServiceProviderEntity\" has 28 methods, which is greater than 20 authorized. Split it into smaller classes."
+    },
+    {
+        "rule_key": "php:S1448",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Factory/IdentityProviderEntityInterface.php",
+        "line": 31,
+        "debt_minutes": 60,
+        "message": "Class \"IdentityProviderEntityInterface\" has 24 methods, which is greater than 20 authorized. Split it into smaller classes."
+    },
+    {
+        "rule_key": "php:S1448",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Factory/ServiceProviderEntityInterface.php",
+        "line": 31,
+        "debt_minutes": 60,
+        "message": "Class \"ServiceProviderEntityInterface\" has 27 methods, which is greater than 20 authorized. Split it into smaller classes."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Entity/AbstractRole.php",
+        "line": 327,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Controllers/IdentityProviderController.php",
+        "line": 85,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Controllers/IdentityProviderController.php",
+        "line": 89,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Fixtures/ServiceRegistryFixture.php",
+        "line": 88,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Fixtures/ServiceRegistryFixture.php",
+        "line": 109,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Mock/EntityRegistry.php",
+        "line": 51,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Mock/EntityRegistry.php",
+        "line": 55,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Mock/MockIdentityProvider.php",
+        "line": 94,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S1488",
+        "severity": "MINOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Stepup/StepupEntityFactory.php",
+        "line": 41,
+        "debt_minutes": 2,
+        "message": "Immediately return this expression instead of assigning it to the temporary variable \"$entity\"."
+    },
+    {
+        "rule_key": "php:S1488",
+        "severity": "MINOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Stepup/StepupEntityFactory.php",
+        "line": 106,
+        "debt_minutes": 2,
+        "message": "Immediately return this expression instead of assigning it to the temporary variable \"$entity\"."
+    },
+    {
+        "rule_key": "php:S1172",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockBundle/Controller/FeedbackController.php",
+        "line": 581,
+        "debt_minutes": 5,
+        "message": "Remove the unused function parameter \"$request\"."
+    },
+    {
+        "rule_key": "php:S1172",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockBundle/Controller/FeedbackController.php",
+        "line": 592,
+        "debt_minutes": 5,
+        "message": "Remove the unused function parameter \"$request\"."
+    },
+    {
+        "rule_key": "php:S1172",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockBundle/Controller/FeedbackController.php",
+        "line": 603,
+        "debt_minutes": 5,
+        "message": "Remove the unused function parameter \"$request\"."
+    },
+    {
+        "rule_key": "php:S4144",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Features/Context/StepupContext.php",
+        "line": 107,
+        "debt_minutes": 15,
+        "message": "Update this method so that its implementation is not identical to \"iAuthenticateWithStepup\" on line 97."
+    },
+    {
+        "rule_key": "php:S3011",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Fixtures/ServiceRegistryFixture.php",
+        "line": 591,
+        "debt_minutes": 30,
+        "message": "Make sure that this accessibility bypass is safe here."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Mock/MockStepupGateway.php",
+        "line": 213,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "Web:S5254",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Resources/views/Sso/consumeAssertion.html.twig",
+        "line": 1,
+        "debt_minutes": 2,
+        "message": "Add \"lang\" and/or \"xml:lang\" attributes to this \"<html>\" element"
+    },
+    {
+        "rule_key": "Web:DoctypePresenceCheck",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Resources/views/Sso/consumeAssertion.html.twig",
+        "line": 1,
+        "debt_minutes": 5,
+        "message": "Insert a <!DOCTYPE> declaration to before this <html> tag."
+    },
+    {
+        "rule_key": "Web:PageWithoutTitleCheck",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Resources/views/Sso/consumeAssertion.html.twig",
+        "line": 1,
+        "debt_minutes": 5,
+        "message": "Add a <title> tag to this page."
+    },
+    {
+        "rule_key": "php:S1448",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Coins.php",
+        "line": 28,
+        "debt_minutes": 60,
+        "message": "Class \"Coins\" has 28 methods, which is greater than 20 authorized. Split it into smaller classes."
+    },
+    {
+        "rule_key": "php:S5797",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Entity/Assembler/PushMetadataAssembler.php",
+        "line": 445,
+        "debt_minutes": 2,
+        "message": "Replace this expression; used as a condition it will always be constant."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Features/Context/EngineBlockContext.php",
+        "line": 807,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Features/Context/EngineBlockContext.php",
+        "line": 785,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S3626",
+        "severity": "MINOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Features/Context/EngineBlockContext.php",
+        "line": 793,
+        "debt_minutes": 1,
+        "message": "Remove this redundant jump."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Features/Context/EngineBlockContext.php",
+        "line": 825,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Validator/SsoRequestValidator.php",
+        "line": 33,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S3776",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/MetadataRepository/DoctrineMetadataPushRepository.php",
+        "line": 79,
+        "debt_minutes": 12,
+        "message": "Refactor this function to reduce its Cognitive Complexity from 22 to the 15 allowed."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/MetadataRepository/DoctrineMetadataPushRepository.php",
+        "line": 129,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S1192",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlockBundle/Authentication/AuthenticationState.php",
+        "line": 55,
+        "debt_minutes": 8,
+        "message": "Define a constant instead of duplicating this literal \"The requestId must be a string (XML ID) value\" 3 times."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Features/Context/MinkContext.php",
+        "line": 243,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Features/Context/MinkContext.php",
+        "line": 251,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Features/Context/MinkContext.php",
+        "line": 282,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Features/Context/EngineBlockContext.php",
+        "line": 767,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Features/Context/EngineBlockContext.php",
+        "line": 763,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/MetadataRepository/DoctrineMetadataRepository.php",
+        "line": 157,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/MetadataRepository/DoctrineMetadataRepository.php",
+        "line": 186,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/MetadataRepository/DoctrineMetadataRepository.php",
+        "line": 212,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/X509/X509CertificateFactory.php",
+        "line": 41,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/X509/X509CertificateFactory.php",
+        "line": 47,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/X509/X509PrivateKey.php",
+        "line": 41,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/X509/X509PrivateKey.php",
+        "line": 45,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Controllers/ServiceProviderController.php",
+        "line": 137,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Controllers/ServiceProviderController.php",
+        "line": 142,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Features/Context/EngineBlockContext.php",
+        "line": 387,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Features/Context/EngineBlockContext.php",
+        "line": 401,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Features/Context/EngineBlockContext.php",
+        "line": 416,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Fixtures/DataStore/AbstractDataStore.php",
+        "line": 55,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Fixtures/DataStore/AbstractDataStore.php",
+        "line": 64,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Mock/AbstractMockEntityRole.php",
+        "line": 186,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S1448",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Entity/Assembler/PushMetadataAssembler.php",
+        "line": 55,
+        "debt_minutes": 60,
+        "message": "Class \"PushMetadataAssembler\" has 24 methods, which is greater than 20 authorized. Split it into smaller classes."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Entity/Assembler/PushMetadataAssembler.php",
+        "line": 568,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S3801",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/AttributeReleasePolicy.php",
+        "line": 242,
+        "debt_minutes": 20,
+        "message": "Refactor this function to use \"return\" consistently."
+    },
+    {
+        "rule_key": "php:S1142",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/AttributeReleasePolicy.php",
+        "line": 185,
+        "debt_minutes": 20,
+        "message": "This method has 5 returns, which is more than the 3 allowed."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Entity/Assembler/PushMetadataAssembler.php",
+        "line": 213,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S1142",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Entity/Assembler/PushMetadataAssembler.php",
+        "line": 362,
+        "debt_minutes": 20,
+        "message": "This method has 4 returns, which is more than the 3 allowed."
+    },
+    {
+        "rule_key": "php:S116",
+        "severity": "MINOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/Entity/IdentityProvider.php",
+        "line": 59,
+        "debt_minutes": 2,
+        "message": "Rename this field \"$GUEST_QUALIFIERS\" to match the regular expression ^[a-z][a-zA-Z0-9]*$."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/X509/X509Certificate.php",
+        "line": 44,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/X509/X509Certificate.php",
+        "line": 68,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Metadata/X509/X509CertificateFactory.php",
+        "line": 64,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Mock/AbstractMockEntityRole.php",
+        "line": 79,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Mock/AbstractMockEntityRole.php",
+        "line": 106,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Mock/AbstractMockEntityRole.php",
+        "line": 126,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Mock/AbstractMockEntityRole.php",
+        "line": 159,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Parser/Corto/XmlToArray.php",
+        "line": 176,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Parser/Corto/XmlToArray.php",
+        "line": 185,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Parser/Corto/XmlToArray.php",
+        "line": 191,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S1110",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockBundle/Controller/WayfController.php",
+        "line": 130,
+        "debt_minutes": 1,
+        "message": "Remove these useless parentheses."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Features/Context/EngineBlockContext.php",
+        "line": 431,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S1142",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockBundle/Localization/LocaleProvider.php",
+        "line": 63,
+        "debt_minutes": 20,
+        "message": "This method has 5 returns, which is more than the 3 allowed."
+    },
+    {
+        "rule_key": "php:S1131",
+        "severity": "MINOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Fixtures/FunctionalTestingPdpClient.php",
+        "line": 95,
+        "debt_minutes": 1,
+        "message": "Remove the useless trailing whitespaces at the end of this line."
+    },
+    {
+        "rule_key": "php:S1155",
+        "severity": "MINOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Http/ResourcePathFormatter.php",
+        "line": 37,
+        "debt_minutes": 2,
+        "message": "Use empty() to check whether the array is empty or not."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Features/Context/EngineBlockContext.php",
+        "line": 345,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Features/Context/EngineBlockContext.php",
+        "line": 356,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S1186",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlockBundle/Value/ExecutionTime.php",
+        "line": 46,
+        "debt_minutes": 5,
+        "message": "Add a nested comment explaining why this method is empty, throw an Exception or complete the implementation."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Fixtures/FunctionalTestingFeatureConfiguration.php",
+        "line": 70,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S116",
+        "severity": "MINOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Parser/Corto/XmlToArray.php",
+        "line": 47,
+        "debt_minutes": 2,
+        "message": "Rename this field \"$_namespaces\" to match the regular expression ^[a-z][a-zA-Z0-9]*$."
+    },
+    {
+        "rule_key": "php:S116",
+        "severity": "MINOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Parser/Corto/XmlToArray.php",
+        "line": 65,
+        "debt_minutes": 2,
+        "message": "Rename this field \"$_singulars\" to match the regular expression ^[a-z][a-zA-Z0-9]*$."
+    },
+    {
+        "rule_key": "php:S116",
+        "severity": "MINOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Parser/Corto/XmlToArray.php",
+        "line": 146,
+        "debt_minutes": 2,
+        "message": "Rename this field \"$_multipleValues\" to match the regular expression ^[a-z][a-zA-Z0-9]*$."
+    },
+    {
+        "rule_key": "php:S3776",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Parser/Corto/XmlToArray.php",
+        "line": 250,
+        "debt_minutes": 15,
+        "message": "Refactor this function to reduce its Cognitive Complexity from 25 to the 15 allowed."
+    },
+    {
+        "rule_key": "php:S1448",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Fixtures/ServiceRegistryFixture.php",
+        "line": 50,
+        "debt_minutes": 60,
+        "message": "Class \"ServiceRegistryFixture\" has 44 methods, which is greater than 20 authorized. Split it into smaller classes."
+    },
+    {
+        "rule_key": "php:S1116",
+        "severity": "MINOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Logger/Formatter/AdditionalInfoFormatter.php",
+        "line": 46,
+        "debt_minutes": 2,
+        "message": "Remove this empty statement."
+    },
+    {
+        "rule_key": "php:S1186",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Logger/Message/AdditionalInfo.php",
+        "line": 117,
+        "debt_minutes": 5,
+        "message": "Add a nested comment explaining why this method is empty, throw an Exception or complete the implementation."
+    },
+    {
+        "rule_key": "php:S1448",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Features/Context/EngineBlockContext.php",
+        "line": 48,
+        "debt_minutes": 60,
+        "message": "Class \"EngineBlockContext\" has 55 methods, which is greater than 20 authorized. Split it into smaller classes."
+    },
+    {
+        "rule_key": "php:S1448",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Features/Context/MockIdpContext.php",
+        "line": 34,
+        "debt_minutes": 60,
+        "message": "Class \"MockIdpContext\" has 29 methods, which is greater than 20 authorized. Split it into smaller classes."
+    },
+    {
+        "rule_key": "php:S1448",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Features/Context/MockSpContext.php",
+        "line": 36,
+        "debt_minutes": 60,
+        "message": "Class \"MockSpContext\" has 50 methods, which is greater than 20 authorized. Split it into smaller classes."
+    },
+    {
+        "rule_key": "php:S1448",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Mock/MockIdentityProvider.php",
+        "line": 31,
+        "debt_minutes": 60,
+        "message": "Class \"MockIdentityProvider\" has 31 methods, which is greater than 20 authorized. Split it into smaller classes."
+    },
+    {
+        "rule_key": "php:S3011",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Mock/MockIdentityProvider.php",
+        "line": 81,
+        "debt_minutes": 30,
+        "message": "Make sure that this accessibility bypass is safe here."
+    },
+    {
+        "rule_key": "php:S1448",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Mock/MockServiceProvider.php",
+        "line": 30,
+        "debt_minutes": 60,
+        "message": "Class \"MockServiceProvider\" has 21 methods, which is greater than 20 authorized. Split it into smaller classes."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Parser/Corto/XmlToArray.php",
+        "line": 209,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Parser/Corto/XmlToArray.php",
+        "line": 220,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S1066",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Parser/Corto/XmlToArray.php",
+        "line": 316,
+        "debt_minutes": 5,
+        "message": "Merge this if statement with the enclosing one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Parser/Corto/XmlToArray.php",
+        "line": 351,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Parser/Corto/XmlToArray.php",
+        "line": 368,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S112",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Parser/Corto/XmlToArray.php",
+        "line": 402,
+        "debt_minutes": 20,
+        "message": "Define and throw a dedicated exception instead of using a generic one."
+    },
+    {
+        "rule_key": "php:S1488",
+        "severity": "MINOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Saml2/Compat/Container.php",
+        "line": 176,
+        "debt_minutes": 2,
+        "message": "Immediately return this expression instead of assigning it to the temporary variable \"$xml\"."
+    },
+    {
+        "rule_key": "php:S1142",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Saml2/Compat/SyslogLogger.php",
+        "line": 48,
+        "debt_minutes": 20,
+        "message": "This method has 8 returns, which is more than the 3 allowed."
+    },
+    {
+        "rule_key": "php:S131",
+        "severity": "CRITICAL",
+        "file_path": "EngineBlock:OpenConext/EngineBlockFunctionalTestingBundle/Saml2/Compat/SyslogLogger.php",
+        "line": 50,
+        "debt_minutes": 5,
+        "message": "Add a \"case default\" clause to this \"switch\" statement."
+    },
+    {
+        "rule_key": "php:S1155",
+        "severity": "MINOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlock/Authentication/Dto/Consent.php",
+        "line": 58,
+        "debt_minutes": 2,
+        "message": "Use empty() to check whether the array is empty or not."
+    },
+    {
+        "rule_key": "php:S1488",
+        "severity": "MINOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockBundle/Security/Http/EntryPoint/JsonBasicAuthenticationEntryPoint.php",
+        "line": 49,
+        "debt_minutes": 2,
+        "message": "Immediately return this expression instead of assigning it to the temporary variable \"$response\"."
+    },
+    {
+        "rule_key": "php:S1448",
+        "severity": "MAJOR",
+        "file_path": "EngineBlock:OpenConext/EngineBlockBundle/Controller/FeedbackController.php",
+        "line": 36,
+        "debt_minutes": 60,
+        "message": "Class \"FeedbackController\" has 34 methods, which is greater than 20 authorized. Split it into smaller classes."
+    }
+]

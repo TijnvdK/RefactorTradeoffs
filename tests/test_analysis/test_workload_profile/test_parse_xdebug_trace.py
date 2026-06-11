@@ -4,7 +4,7 @@ from tempfile import TemporaryDirectory
 
 class TestParseXdebugTrace:
     def test_parse_invalid_xdebug_trace(self):
-        from src.analysis.workload_profile.parse_xdebug_trace import (
+        from src.repository_analysis.workload_profile.parse_xdebug_trace import (
             parse_xdebug_trace,
         )
 
@@ -23,7 +23,7 @@ class TestParseXdebugTrace:
             assert output_content == ''
 
     def test_parse_xdebug_trace(self):
-        from src.analysis.workload_profile.parse_xdebug_trace import (
+        from src.repository_analysis.workload_profile.parse_xdebug_trace import (
             parse_xdebug_trace,
         )
 

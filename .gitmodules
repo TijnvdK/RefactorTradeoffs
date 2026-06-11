@@ -1,7 +1,3 @@
-[submodule "datasets/OpenContext-engineblock"]
-	path = datasets/OpenContext-engineblock
-	url = https://github.com/ThijsJ04/OpenConext-engineblock.git
-	branch = 7.0.1-fork
-[submodule "src/measure_energy/cpu_util/cloud-energy"]
-	path = src/measure_energy/cpu_util/cloud-energy
+[submodule "src/pipeline/measuring_energy/cpu_util/cloud-energy"]
+	path = src/pipeline/measuring_energy/cpu_util/cloud-energy
 	url = https://github.com/green-coding-solutions/cloud-energy.git

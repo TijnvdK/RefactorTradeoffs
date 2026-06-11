@@ -20,7 +20,7 @@ def base_path():
 
 class TestOutputParser:
     def test_parse_pdepend(self, base_path):
-        from src.analysis.static_analysis.analyze_php.output_parser import (
+        from src.repository_analysis.static_analysis.analyze_php.output_parser import (
             parse_pdepend,
         )
 
@@ -45,7 +45,7 @@ class TestOutputParser:
         assert expected_keys.issubset(first_method.keys())
 
     def test_parse_phpcs(self, base_path):
-        from src.analysis.static_analysis.analyze_php.output_parser import (
+        from src.repository_analysis.static_analysis.analyze_php.output_parser import (
             parse_phpcs,
         )
 
@@ -64,7 +64,7 @@ class TestOutputParser:
         assert all_warnings > 0
 
     def test_parse_phpmd(self, base_path):
-        from src.analysis.static_analysis.analyze_php.output_parser import (
+        from src.repository_analysis.static_analysis.analyze_php.output_parser import (
             parse_phpmd,
         )
 
@@ -76,7 +76,7 @@ class TestOutputParser:
         assert len(parsed_output) > 0
 
     def test_phpmetrics(self, base_path):
-        from src.analysis.static_analysis.analyze_php.output_parser import (
+        from src.repository_analysis.static_analysis.analyze_php.output_parser import (
             parse_phpmetrics,
         )
 
