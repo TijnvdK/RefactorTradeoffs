@@ -59,10 +59,8 @@ class Settings(BaseSettings):
     job_dir: str
     path_to_repository: str
     path_to_php_cli_sif: str
-    path_to_openhands_sif: str
     path_to_mariadb_sif: str
     path_to_phpunit_sif: str
-    path_to_rag_vector_store: str
 
     ## SonarQube settings ##
     sq_url: str

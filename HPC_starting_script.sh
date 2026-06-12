@@ -24,15 +24,11 @@ export HF_HOME=$JOB_DIR/hf_cache
 PATH_TO_REPOSITORY=$JOB_DIR/repository
 cp -r /home/${USER}/repository $PATH_TO_REPOSITORY
 PATH_TO_PHP_CLI_SIF=$JOB_DIR/php8-2-cli.sif
-cp /home/${USER}/php8-2-cli.sif $PATH_TO_PHP_SIF
-PATH_TO_OPENHANDS_SIF=$JOB_DIR/openhands.sif
-cp /home/${USER}/openhands.sif $PATH_TO_OPENHANDS_SIF
+cp ./apptainers/php8-2-cli.sif $PATH_TO_PHP_SIF
 PATH_TO_MARIADB_SIF=$JOB_DIR/mariadb.sif
-cp /home/${USER}/mariadb.sif $PATH_TO_MARIADB_SIF
+cp ./apptainers/mariadb.sif $PATH_TO_MARIADB_SIF
 PATH_TO_PHPUNIT_SIF=$JOB_DIR/phpunit.sif
-cp /home/${USER}/phpunit.sif $PATH_TO_PHPUNIT_SIF
-PATH_TO_RAG_VECTOR_STORE=$JOB_DIR/rag_vector_store
-cp -r /home/${USER}/rag_vector_store $PATH_TO_RAG_VECTOR_STORE
+cp ./apptainers/phpunit.sif $PATH_TO_PHPUNIT_SIF
 
 # We need to load Python3.12 and CUDA modules. On Snellius:
 # module load 2025
@@ -58,11 +54,11 @@ cp -r /home/${USER}/rag_vector_store $PATH_TO_RAG_VECTOR_STORE
 
 source "./.venv/bin/activate"
 export PYTHONPATH="$(pwd):${PYTHONPATH}"
-python "./src/runner.py" --agent refactoring --model Qwen/Qwen2.5-Coder-1.5B
-# python "./src/runner.py" --agent verification --model Qwen/Qwen2.5-Coder-1.5B --iteration 0
 
-# python -m vllm.entrypoints.openai.api_server \
-#     --model devstral-2-123b \
-#     --enable-prefix-caching \
-#     --tensor-parallel-size N \
-#     --port 8000
+python -m vllm.entrypoints.openai.api_server \
+    --model Qwen/Qwen2.5-Coder-14B-Instruct \
+    --enable-prefix-caching \
+    --tensor-parallel-size 1 \
+    --port 8000
+
+python -m src.pipeline.runner

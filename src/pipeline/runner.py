@@ -320,7 +320,7 @@ def _run(
     base_repo: Path,
     cpu_meter: CPUEnergyMeter,
     gpu_meter: GPUEnergyMeter,
-) -> ResultSchema:
+):
     run_repo = Path(settings.job_dir) / f'run_{run_index}'
     copytree(base_repo, run_repo, dirs_exist_ok=False)
 
@@ -394,7 +394,15 @@ def _run(
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / f'run_{run_index}.json').write_text(json_dumps(result, indent=4))
 
-    return result
+    logger.info(
+        'Run %d complete - accepted %d / %d units, '
+        'energy %.1f J, wall time %.1f s',
+        run_index,
+        result['total_accepted_units'],
+        result['total_processed_units'],
+        result['total_energy_joules'],
+        result['wall_time_seconds'],
+    )
 
 
 def runner():
@@ -417,14 +425,8 @@ def runner():
             settings.vllm_server_model_name,
         )
 
-        result = _run(run_index, base_repo, cpu_meter, gpu_meter)
+        _run(run_index, base_repo, cpu_meter, gpu_meter)
 
-        logger.info(
-            'Run %d complete - accepted %d / %d units, '
-            'energy %.1f J, wall time %.1f s',
-            run_index,
-            result['total_accepted_units'],
-            result['total_processed_units'],
-            result['total_energy_joules'],
-            result['wall_time_seconds'],
-        )
+
+if __name__ == '__main__':
+    runner()
