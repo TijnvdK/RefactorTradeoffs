@@ -1,18 +1,33 @@
-from typing import Optional, TypedDict
+from typing import List, Literal, Optional, TypedDict
 
 
-class CodeRecord(TypedDict):
+class UnitResultSchema(TypedDict):
+    name: str
+    file: str
+    accepted: bool
+    semantic_retries: int
+    correctness_retries: int
+    llm_calls: int
+    tokens_in: int
+    tokens_out: int
+    tool_calls: Optional[int]
+
+
+class ResultSchema(TypedDict):
+    run_index: int
+    experiment_type: Literal['passive', 'active']
+    agent_type: Literal['agent', 'agentic']
     model: str
-    php_file: str  # Absolute path
-    code: str
-    energy_consumed_refactor: float
-    energy_consumed_fix: Optional[float]
-    total_energy_consumed: float
-    amount_of_refactoring_retries: Optional[int]
-    amount_of_fix_retries: Optional[int]
-    error_output: Optional[str]
-
-
-class UserPrompt(TypedDict):
-    prompt: str
-    php_file: str  # Absolute path
+    language: Literal['php']
+    wall_time_seconds: float
+    cpu_energy_joules: float
+    gpu_energy_joules: float
+    total_energy_joules: float
+    total_llm_calls: int
+    total_tokens_in: int
+    total_tokens_out: int
+    total_processed_units: int
+    total_accepted_units: int
+    total_rejected_units: int
+    acceptance_rate: float
+    per_unit_results: List[UnitResultSchema]

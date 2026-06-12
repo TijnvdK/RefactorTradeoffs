@@ -1,0 +1,28 @@
+## LLM settings ##
+# vllm_model: mistralai/Devstral-2-123B-Instruct-2512
+vllm_model: Qwen/Qwen2.5-Coder-14B-Instruct
+# vllm_server_model_name: Devstral-2-123B-Instruct-2512
+vllm_server_model_name: Qwen2.5-Coder-14B-Instruct
+vllm_api_url: http://localhost:8000/v1
+vllm_gpu_memory_utilization: 0.95
+vllm_max_model_len: 65536
+vllm_max_tokens: 65536
+vllm_tensor_parallel_size: 1
+
+## Timeouts ##
+vllm_server_timeout: 600
+semantic_check_timeout: 30
+correctness_check_timeout: 300
+
+## Agent settings ##
+agent_type: agent  # agent | agentic
+language: php  # php | [... other languages not yet supported]
+
+## Experiment configurations ##
+experiment_type: passive  # passive | active
+run_size: 20
+max_semantic_retries: 5
+max_correctness_retries: 5
+
+## SonarQube ##
+sq_url: http://localhost:9000

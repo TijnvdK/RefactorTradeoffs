@@ -1,4 +1,4 @@
-from src.utils import file_to_str_gen, parse_refactored_code
+from src.pipeline.utils import file_to_str_gen, parse_refactored_code
 from tests.random_generate_functions import generate_random_string
 
 

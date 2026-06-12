@@ -11,7 +11,7 @@ from src.refactoring.agents.fix_agent import fix_agent
 from src.refactoring.agents.refactoring_agent import refactoring_agent
 from src.refactoring.agents.verification_agent import verification_agent
 from src.refactoring.handlers.vllm_handler import VLLMHandler
-from src.utils import file_to_str_gen
+from src.pipeline.utils import file_to_str_gen
 from src.refactoring.verifiers.engineblock_verifier import (
     engineblock_verifier,
 )
