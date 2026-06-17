@@ -39,7 +39,7 @@ def _send_message_to_llm(messages: History) -> ChatCompletion:
         ChatCompletion: The chat completion response from the LLM.
     """
     return _client.chat.completions.create(
-        model=settings.vllm_server_model_name,
+        model=settings.vllm_model,
         messages=messages,
         max_tokens=settings.vllm_max_tokens,
         timeout=settings.vllm_server_timeout,

@@ -18,7 +18,7 @@ logger = getLogger(__name__)
 
 def run_openhands_task(task: str, working_dir: Path) -> Tuple[int, TokenUsage]:
     llm = LLM(
-        model=f'openai/{settings.vllm_server_model_name}',
+        model=f'openai/{settings.vllm_model}',
         api_key=SecretStr('EMPTY'),
         base_url=settings.vllm_api_url,
     )
