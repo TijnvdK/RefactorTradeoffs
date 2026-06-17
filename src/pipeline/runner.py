@@ -12,7 +12,7 @@ from json import dumps as json_dumps
 from src.globals.custom_exceptions import LLMCallFailed
 from src.globals.types import ResultSchema, UnitResultSchema
 from src.pipeline.code_checks.correctness_checks import (
-    correctness_check_engineblock,
+    correctness_check_eb,
 )
 from src.pipeline.code_checks.semantic_checks import semantic_check_php
 from src.pipeline.llm_context.tree_parser import (
@@ -130,20 +130,20 @@ def _refactor(
             total_tokens_in += usage['prompt_tokens']
             total_tokens_out += usage['completion_tokens']
 
-            semantic_result = semantic_check_php(refactored_code)
-            if semantic_result['is_valid']:
+            passed, check_output = semantic_check_php(refactored_code)
+            if passed:
                 break
 
             logger.debug(
                 'Semantic check failed (attempt %d) for %s: %s',
                 semantic_retries + 1,
                 unit['function_info']['name'],
-                semantic_result['error_message'],
+                check_output,
             )
             message = (
                 'The code you returned has a syntax error. Fix it and return '
                 'only the corrected function in a ```php code block.\n\n'
-                f'Error:\n{semantic_result["error_message"]}'
+                f'Error:\n{check_output}'
             )
 
             semantic_retries += 1
@@ -172,7 +172,7 @@ def _refactor(
             )
             unit['file_path'].write_text(updated_source)
 
-        passed, test_output = correctness_check_engineblock()
+        passed, test_output = correctness_check_eb()
         if passed:
             break
 
@@ -407,7 +407,9 @@ def _run(
 
 def runner():
     logging_basicConfig(
-        level=logging_INFO, format='%(asctime)s - %(levelname)s - %(message)s'
+        level=logging_INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        force=True,
     )
 
     base_repo = Path(settings.path_to_repository)

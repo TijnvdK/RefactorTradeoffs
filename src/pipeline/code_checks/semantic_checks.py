@@ -1,19 +1,14 @@
 from logging import getLogger
+from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Optional, TypedDict
+from typing import Tuple
 from src.settings import settings
 from subprocess import TimeoutExpired, run as subprocess_run
-from os import unlink as os_unlink
 
 logger = getLogger(__name__)
 
 
-class SemanticCheckOutput(TypedDict):
-    is_valid: bool
-    error_message: Optional[str]
-
-
-def semantic_check_php(code: str) -> SemanticCheckOutput:
+def semantic_check_php(code: str) -> Tuple[bool, str]:
     """
     Checks if the provided PHP code is syntactically correct.
 
@@ -21,57 +16,34 @@ def semantic_check_php(code: str) -> SemanticCheckOutput:
         code (str): The PHP code to validate.
 
     Returns:
-        SemanticCheckOutput: The result of the semantic check.
+        Tuple[bool, str]: A tuple where the first element is a boolean
+        indicating whether the code is syntactically correct, and the second
+        element is a string containing the output of the syntax check
+        (error messages if any).
     """
+
     stripped = code.strip()
     if not stripped or not (
         stripped.startswith('<?php') or stripped.startswith('<?')
     ):
-        return SemanticCheckOutput(
-            is_valid=False,
-            error_message='Code does not start with a valid PHP opening tag.',
-        )
+        return (False, 'Code does not start with a valid PHP opening tag.')
 
     with NamedTemporaryFile(
         suffix='.php', mode='w', delete=False, dir=settings.job_dir
-    ) as f:
-        f.write(code)
-        tmp = f.name
-    try:
-        result = subprocess_run(
-            [
-                'apptainer',
-                'exec',
-                '--bind',
-                f'{settings.job_dir}:{settings.job_dir}',
-                '--writable-tmpfs',
-                '--nv',
-                '--contain',
-                settings.path_to_php_cli_sif,
-                'php',
-                '-l',
-                tmp,
-            ],
-            capture_output=True,
-            timeout=settings.semantic_check_timeout,
-        )
+    ) as _file:
+        _file.write(code)
 
-        if result.returncode == 0:
-            return SemanticCheckOutput(is_valid=True, error_message=None)
-        else:
-            error_output = result.stderr.decode(
-                'utf-8', errors='replace'
-            ).strip()
-            return SemanticCheckOutput(
-                is_valid=False,
-                error_message=error_output
-                if error_output
-                else 'PHP syntax check failed with no error message.',
+        _runner = Path(__file__).parent / 'run_php82_lint.sh'
+
+        try:
+            cmd = ['bash', str(_runner), _file.path]
+            result = subprocess_run(
+                cmd, timeout=settings.semantic_check_timeout
             )
-    except TimeoutExpired:
-        logger.error('PHP syntax check timed out.')
-        return SemanticCheckOutput(
-            is_valid=False, error_message='PHP syntax check timed out.'
-        )
-    finally:
-        os_unlink(tmp)
+            return (result.returncode == 0, result.stdout.decode())
+        except TimeoutExpired:
+            logger.error(
+                'PHP syntax check timed out after '
+                f'{settings.semantic_check_timeout} seconds.'
+            )
+            return (False, 'PHP syntax check timed out.')

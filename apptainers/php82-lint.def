@@ -1,0 +1,5 @@
+Bootstrap: docker
+From: php:8.2-cli
+
+%runscript
+    exec php -l "$@"

@@ -1,0 +1,126 @@
+# This image must be build from the EngineBlock root and may require internet
+# access since it pulls the base image from GHCR.
+
+Bootstrap: docker
+From: ghcr.io/openconext/openconext-basecontainers/php82-apache2-node20-composer2:latest
+
+%labels
+    description "EngineBlock PHPUnit test runner - PHP 8.2 + MariaDB 10.6"
+
+# Copying files into the image. This is the reason the image must be build
+# from the EngineBlock root.
+# Vendor is not copied over, that will created using an explicit composer
+# install later.
+%files
+    src             /var/www/html/src
+    library         /var/www/html/library
+    tests           /var/www/html/tests
+    config          /var/www/html/config
+    migrations      /var/www/html/migrations
+    bin             /var/www/html/bin
+    public          /var/www/html/public
+    ci              /var/www/html/ci
+    application     /var/www/html/application
+    languages       /var/www/html/languages
+    theme           /var/www/html/theme
+    composer.json   /var/www/html/composer.json
+    composer.lock   /var/www/html/composer.lock
+    symfony.lock    /var/www/html/symfony.lock
+    .env            /var/www/html/.env
+
+%post
+    set -eu
+
+    apt-get update -qq
+    apt-get install -y --no-install-recommends mariadb-server
+    apt-get clean
+    rm -rf /var/lib/apt/lists/*
+
+    # pdo_mysql.default_socket makes PHP connect via Unix socket when
+    # host=localhost, so no TCP port needs to be kept in sync with mysqld.
+    cat > /usr/local/etc/php/conf.d/eb_test.ini <<'PHPINI'
+date.timezone = Europe/Amsterdam
+memory_limit = -1
+sys_temp_dir = /tmp
+pdo_mysql.default_socket=/tmp/eb_test_mysql.sock
+mysqli.default_socket=/tmp/eb_test_mysql.sock
+PHPINI
+
+    # Strip Windows file endings. Especially Windows file endings in /bin
+    # causes program execution failures.
+    find /var/www/html -type f \
+        ! -name '*.crt' ! -name '*.pem' \
+        -print0 \
+        | xargs -0 file \
+        | grep 'text' \
+        | cut -d: -f1 \
+        | xargs -d '\n' sed -i 's/\r//'
+
+    # node_modules are not needed for PHPUnit
+    rm -rf /var/www/html/theme/node_modules
+
+    # Hostname fix: CI config hardcodes the Docker service name 'mariadb'.
+    # Using 'localhost' (not 127.0.0.1) tells PHP to use the Unix socket
+    # configured above instead of TCP.
+    sed -i 's/database\.test\.host: mariadb/database.test.host: localhost/g' \
+        /var/www/html/config/packages/ci/framework.yaml
+
+    # Seed parameters.yml from the dist file.
+    cp /var/www/html/config/packages/parameters.yml.dist \
+       /var/www/html/config/packages/parameters.yml
+    sed -i \
+        -e 's/database\.host: mariadb/database.host: localhost/g' \
+        -e 's/database\.test\.host: mariadb/database.test.host: localhost/g' \
+        /var/www/html/config/packages/parameters.yml
+
+    # SSL certificates (needed by the SAML stack even in test mode)
+    mkdir -p /config/engine
+    cp /var/www/html/ci/qa-config/files/engine.dev.openconext.local.crt \
+       /config/engine/engineblock.crt
+    cp /var/www/html/ci/qa-config/files/engine.dev.openconext.local.key \
+       /config/engine/engineblock.pem
+    chmod 644 /config/engine/engineblock.crt /config/engine/engineblock.pem
+
+    # Bake vendor
+    cd /var/www/html
+    COMPOSER_ALLOW_SUPERUSER=1 COMPOSER_HOME=/tmp/composer_home \
+        composer install \
+            --prefer-dist \
+            --no-interaction \
+            --optimize-autoloader \
+            --no-scripts
+    rm -rf /tmp/composer_home
+
+    # var/ is bind-mounted at run time. Creating these dirs so the initial
+    # cache:clear finds a valid parent path inside the image.
+    mkdir -p /var/www/html/var/cache /var/www/html/var/log
+    chmod -R 777 /var/www/html/var
+
+%environment
+    export APP_ENV=ci
+    export APP_SECRET=secret
+    export APP_DEBUG=false
+    # Prevent composer from writing to a read-only home during test runs
+    export COMPOSER_HOME=/tmp/.composer
+    # Prevent test warning
+    export XDEBUG_MODE=coverage
+
+%startscript
+    mkdir -p /tmp/eb-fixtures/db
+    chmod 777 /tmp/eb-fixtures
+
+    # --no-defaults bypasses any system-level /etc/mysql/my.cnf inside the
+    # image that might specify --user=mysql or other incompatible settings.
+    # --tmpdir=/var/lib/mysql avoids InnoDB using $TMPDIR, which on SLURM nodes
+    # is often a bare /local_scratch path that does not exist in the container.
+    # --skip-networking disables TCP so no port needs to be kept in sync;
+    # all connections go through the socket configured in php.ini.
+    exec mysqld --no-defaults \
+        --datadir=/var/lib/mysql \
+        --socket=/tmp/eb_test_mysql.sock \
+        --pid-file=/tmp/eb_test_mysql.pid \
+        --skip-networking \
+        --tmpdir=/var/lib/mysql \
+        --innodb-use-native-aio=0 \
+        --innodb-buffer-pool-size=64M \
+        2>>/tmp/eb_mariadb.log
