@@ -9,7 +9,7 @@ class LLMCallFailed(Exception):
         Create an instance of the LMCallFailed class.
         """
         super().__init__(
-            'Call to the language model failed.\n' + message
+            'Call to the language model failed.\n' + str(message)
             if message
             else 'The expected output was not received.'
         )

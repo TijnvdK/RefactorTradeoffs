@@ -1,26 +1,5 @@
-from src.pipeline.utils import file_to_str_gen, parse_refactored_code
+from src.pipeline.utils import parse_refactored_code
 from tests.random_generate_functions import generate_random_string
-
-
-class TestFileToStrGen:
-    def test_file_to_str_gen(self, tmp_path):
-        file1 = tmp_path / 'file1.txt'
-        file2 = tmp_path / 'file2.txt'
-        file3 = tmp_path / 'file3.md'
-
-        file1.write_text('Content of file 1')
-        file2.write_text('Content of file 2')
-        file3.write_text('Content of file 3')
-
-        gen = file_to_str_gen(tmp_path, '.txt')
-        contents = list(gen)
-
-        assert len(contents) == 2
-
-        file_contents = [content[1] for content in contents]
-        assert 'Content of file 1' in file_contents
-        assert 'Content of file 2' in file_contents
-        assert 'Content of file 3' not in file_contents
 
 
 class TestParseRefactoredCode:

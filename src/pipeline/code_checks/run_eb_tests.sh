@@ -5,12 +5,12 @@ if [[ $# -ne 1 ]]; then
     exit 2
 fi
 
+APPTAINER_RESULT=0
 OUTPUT_DIR="$1"
 
-
-
-apptainer exec "instance://eb_runner" bash <<'INNER'
+apptainer exec --env JUNIT_DIR="/tmp/phpunit-results" "instance://eb_runner" bash <<'INNER' || APPTAINER_RESULT=$?
 set -euo pipefail
+exec > /dev/null
 cd /var/www/html
 
 RESULT=0
@@ -32,14 +32,14 @@ RESULT=0
 ./vendor/bin/phpunit \
     --configuration=./tests/phpunit.xml \
     --testsuite=eb4 \
-    --log-junit="${OUTPUT_DIR}/phpunit-eb4.xml" \
+    --log-junit="${JUNIT_DIR}/phpunit-eb4.xml" \
     || RESULT=$?
 
 # PHPUnit: unit
 ./vendor/bin/phpunit \
     --configuration=./tests/phpunit.xml \
     --testsuite=unit \
-    --log-junit="${OUTPUT_DIR}/phpunit-unit.xml" \
+    --log-junit="${JUNIT_DIR}/phpunit-unit.xml" \
     || RESULT=$?
 
 # Switch Symfony environment for next test suites
@@ -51,15 +51,20 @@ RESULT=0
 APP_ENV=test ./vendor/bin/phpunit \
     --configuration=./tests/phpunit.xml \
     --testsuite=functional \
-    --log-junit="${OUTPUT_DIR}/phpunit-functional.xml" \
+    --log-junit="${JUNIT_DIR}/phpunit-functional.xml" \
     || RESULT=$?
 
 # PHPUnit: integration
 ./vendor/bin/phpunit \
     --configuration=./tests/phpunit.xml \
     --testsuite=integration \
-    --log-junit="${OUTPUT_DIR}/phpunit-integration.xml" \
+    --log-junit="${JUNIT_DIR}/phpunit-integration.xml" \
     || RESULT=$?
+
+ls -la "${JUNIT_DIR}" || echo "JUNIT_DIR not visible in container"
 
 exit $RESULT
 INNER
+
+mkdir -p "${OUTPUT_DIR}"
+cp "${JOB_DIR}/tmp/phpunit-results/"*.xml "${OUTPUT_DIR}/"

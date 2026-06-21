@@ -5,17 +5,7 @@ import pytest
 
 @pytest.fixture
 def base_path():
-    _cwd = Path.cwd()
-    return (
-        _cwd
-        / 'src'
-        / 'analysis'
-        / 'static_analysis'
-        / 'analyze_php'
-        / 'outputs'
-        / 'raw_output'
-        / 'example_php_code_dir'
-    )
+    return Path(__file__).parent / 'example_outputs'
 
 
 class TestOutputParser:

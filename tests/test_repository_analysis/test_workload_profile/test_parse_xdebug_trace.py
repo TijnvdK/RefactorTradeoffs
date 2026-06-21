@@ -1,13 +1,12 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from src.repository_analysis.workload_profile.parse_xdebug_trace import (
+    parse_xdebug_trace,
+)
 
 
 class TestParseXdebugTrace:
     def test_parse_invalid_xdebug_trace(self):
-        from src.repository_analysis.workload_profile.parse_xdebug_trace import (
-            parse_xdebug_trace,
-        )
-
         with TemporaryDirectory() as temp_dir:
             temp_file_path = Path(temp_dir) / 'temp_invalid_trace.xt'
             temp_file_path.write_text('This is not a valid Xdebug trace file.')
@@ -23,10 +22,6 @@ class TestParseXdebugTrace:
             assert output_content == ''
 
     def test_parse_xdebug_trace(self):
-        from src.repository_analysis.workload_profile.parse_xdebug_trace import (
-            parse_xdebug_trace,
-        )
-
         with TemporaryDirectory() as temp_dir:
             temp_file_path = Path(temp_dir) / 'temp_valid_trace.xt'
             # A minimal file that is valid according to our parsing logic.

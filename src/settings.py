@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Any, Dict, Literal, Tuple
 
+from pydantic import Field
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
@@ -54,13 +55,13 @@ class Settings(BaseSettings):
     run_size: int
     max_semantic_retries: int
     max_correctness_retries: int
+    min_function_loc: int
 
     ## Paths ##
-    job_dir: str
-    path_to_repository: str
-    path_to_php_cli_sif: str
-    path_to_mariadb_sif: str
-    path_to_phpunit_sif: str
+    job_dir: str = Field(default='/tmp/job_dir')
+    path_to_repository: str = Field(default='/tmp/repository')
+    path_to_eb_test_sif: str = Field(default='/tmp/eb_test.sif')
+    path_to_php82_lint_sif: str = Field(default='/tmp/php82_lint.sif')
 
     ## SonarQube settings ##
     sq_url: str

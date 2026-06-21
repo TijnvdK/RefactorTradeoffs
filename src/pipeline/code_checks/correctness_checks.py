@@ -77,10 +77,14 @@ def parse_and_format_eb_test_results(output_dir: str) -> str:
                 for child in testcase:
                     if child.tag not in ('failure', 'error'):
                         continue
+
+                    classname = testcase.get('classname', '')
+                    name = testcase.get('name', '')
+
                     failures.append(
                         EBTestFailure(
                             suite=suite_name,
-                            test=f'{testcase.get("classname", "")}.{testcase.get("name", "")}',
+                            test=f'{classname}.{name}' if classname else name,
                             message=(child.text or '').strip(),
                         )
                     )
@@ -113,7 +117,7 @@ def parse_and_format_eb_test_results(output_dir: str) -> str:
                 lines.append(failure['message'])
             lines.append('---')
             blocks.append('\n'.join(lines))
-        return '\n'.join(blocks)
+        return '\n'.join(blocks) + '\n' if blocks else ''
 
     return format_failures(parse_eb_test_results(output_dir))
 

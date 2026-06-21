@@ -26,3 +26,17 @@ def generate_random_float() -> float:
     from secrets import SystemRandom
 
     return SystemRandom().random()
+
+
+def generate_random_integer() -> int:
+    """
+    Generate a random integer between 0 and sys.maxsize.
+
+    Returns:
+        int: The generated random integer.
+    """
+
+    from secrets import SystemRandom
+    from sys import maxsize
+
+    return SystemRandom().randint(0, maxsize)

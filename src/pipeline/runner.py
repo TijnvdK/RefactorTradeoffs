@@ -270,7 +270,7 @@ def _build_units_passive(repo_path: Path) -> List[Unit]:
     units: List[Unit] = []
     for php_file in repo_path.rglob('*.php'):
         source = php_file.read_text()
-        for fn in extract_functions(source):
+        for fn in extract_functions(source, min_loc=settings.min_function_loc):
             units.append(
                 Unit(
                     task=(
@@ -286,12 +286,10 @@ def _build_units_passive(repo_path: Path) -> List[Unit]:
     return units
 
 
-def _build_units_active(repo_path: Path) -> List[Unit]:
-    issues: List[SonarQubeIssue] = json_loads(
-        (
-            Path(__file__).parent / 'sonarqube' / 'sonarqube_issues.json'
-        ).read_text()
-    )
+def _build_units_active(
+    repo_path: Path, sonarqube_issues_path: Path
+) -> List[Unit]:
+    issues: List[SonarQubeIssue] = json_loads(sonarqube_issues_path.read_text())
     units: List[Unit] = []
     for issue in issues:
         # issue['file_path'] is relative to the original repo root; remap to
@@ -327,7 +325,10 @@ def _run(
     if settings.experiment_type == 'passive':
         units = _build_units_passive(run_repo)
     else:
-        units = _build_units_active(run_repo)
+        units = _build_units_active(
+            run_repo,
+            Path(__file__).parent / 'sonarqube' / 'sonarqube_issues.json',
+        )
 
     by_file: Dict[Path, List[Unit]] = {}
     for unit in units:

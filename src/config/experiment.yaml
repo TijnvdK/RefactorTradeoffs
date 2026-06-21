@@ -23,6 +23,7 @@ experiment_type: passive  # passive | active
 run_size: 20
 max_semantic_retries: 5
 max_correctness_retries: 5
+min_function_loc: 15
 
 ## SonarQube ##
 sq_url: http://localhost:9000

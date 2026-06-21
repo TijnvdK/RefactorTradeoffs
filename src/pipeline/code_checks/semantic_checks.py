@@ -36,9 +36,11 @@ def semantic_check_php(code: str) -> Tuple[bool, str]:
         _runner = Path(__file__).parent / 'run_php82_lint.sh'
 
         try:
-            cmd = ['bash', str(_runner), _file.path]
+            cmd = ['bash', str(_runner), _file.name]
             result = subprocess_run(
-                cmd, timeout=settings.semantic_check_timeout
+                cmd,
+                capture_output=True,
+                timeout=settings.semantic_check_timeout,
             )
             return (result.returncode == 0, result.stdout.decode())
         except TimeoutExpired:

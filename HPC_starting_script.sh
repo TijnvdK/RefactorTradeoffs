@@ -57,12 +57,9 @@ export PATH_TO_PHP82_LINT_SIF=$JOB_DIR/php82_lint.sif
 # On UvA Hipster only the following variables have to be set, since Hipster
 # already had some CUDA installation by default.
 # ```
-# export LD_LIBRARY_PATH=/usr/lib64:$LD_LIBRARY_PATH
-# export PATH=/usr/bin:$PATH
+export LD_LIBRARY_PATH=/usr/lib64:${LD_LIBRARY_PATH:-}
+export PATH=/usr/bin:${PATH:-}
 # ```
-
-export LD_LIBRARY_PATH=/usr/lib64:$LD_LIBRARY_PATH
-export PATH=/usr/bin:$PATH
 
 # If you are refactoring EngineBlock, you need to setup the PHP environment.
 # Uncomment the following lines to setup this environment.
@@ -72,11 +69,11 @@ export PHP_ENV_VAR_DIR=$JOB_DIR/.eb_var
 
 # Initialize SQL data
 
-[[ ! -d "${MYSQL_DATA}" ]] && mkdir -p "${MYSQL_DATA}"
+[[ ! -d "${PHP_ENV_MYSQL_DATA}" ]] && mkdir -p "${PHP_ENV_MYSQL_DATA}"
 # mysql_install_db runs as the current user; no --user flag needed since
 # mysqld won't attempt a uid switch when already running as non-root.
 apptainer exec \
-    --bind "${MYSQL_DATA}:/var/lib/mysql" \
+    --bind "${PHP_ENV_MYSQL_DATA}:/var/lib/mysql" \
     "${PATH_TO_EB_TEST_SIF}" \
     mysql_install_db \
         --datadir=/var/lib/mysql \
@@ -84,33 +81,33 @@ apptainer exec \
         --skip-test-db \
         --tmpdir=/var/lib/mysql
 
-[[ ! -d "${VAR_DIR}/cache" ]] && mkdir -p "${VAR_DIR}/cache"
-[[ ! -d "${VAR_DIR}/log" ]] && mkdir -p "${VAR_DIR}/log"
+[[ ! -d "${PHP_ENV_VAR_DIR}/cache" ]] && mkdir -p "${PHP_ENV_VAR_DIR}/cache"
+[[ ! -d "${PHP_ENV_VAR_DIR}/log" ]] && mkdir -p "${PHP_ENV_VAR_DIR}/log"
 
 # Start the EngineBlock test environment
 apptainer instance start \
-    --bind "${MYSQL_DATA}:/var/lib/mysql" \
+    --bind "${PHP_ENV_MYSQL_DATA}:/var/lib/mysql" \
     --bind "${JOB_DIR}/tmp:/tmp" \
     --bind "${PATH_TO_REPOSITORY}/src:/var/www/html/src" \
-    --bind "${VAR_DIR}:/var/www/html/var" \
+    --bind "${PHP_ENV_VAR_DIR}:/var/www/html/var" \
     "${PATH_TO_EB_TEST_SIF}" eb_runner
 
 # Waiting for MariaDB to accept connections
 ELAPSED=0
-until apptainer exec "instance://${INSTANCE}" \
+until apptainer exec "instance://eb_runner" \
         mysqladmin --socket=/tmp/eb_test_mysql.sock ping 2>/dev/null; do
     sleep 1
     ELAPSED=$((ELAPSED + 1))
     if [ "${ELAPSED}" -ge 60 ]; then
         echo "ERROR: MariaDB did not start within 60 s." >&2
         echo "--- MariaDB log ---" >&2
-        apptainer exec "instance://${INSTANCE}" cat /tmp/eb_mariadb.log
+        apptainer exec "instance://eb_runner" cat /tmp/eb_mariadb.log
         exit 1
     fi
 done
 
 # Creating test databases
-apptainer exec "instance://${INSTANCE}" bash -c "
+apptainer exec "instance://eb_runner" bash -c "
 mysql --socket=/tmp/eb_test_mysql.sock -u root <<'SQL'
 CREATE DATABASE IF NOT EXISTS eb_test
     CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -127,7 +124,7 @@ SQL
 
 # Activate Python
 source "./.venv/bin/activate"
-export PYTHONPATH="$(pwd):${PYTHONPATH}"
+export PYTHONPATH="$(pwd):${PYTHONPATH:-}"
 
 # Start vLLM server
 python -m vllm.entrypoints.openai.api_server \
