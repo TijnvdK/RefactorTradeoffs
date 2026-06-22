@@ -8,6 +8,7 @@ from pathlib import Path
 from shutil import copytree
 from signal import SIGTERM
 from subprocess import DEVNULL, Popen
+from threading import Lock
 from time import time
 from typing import Dict, List, TypedDict
 from json import dumps as json_dumps
@@ -65,6 +66,10 @@ SYSTEM_PROMPT_ACTIVE = (
     "Do not change the function's name, parameters, or return type. "
     'Do not include any explanation outside the code block.'
 )
+
+
+_processed_unit_count = 0
+_processed_unit_count_lock = Lock()
 
 
 def _start_vllm() -> Popen:
@@ -179,9 +184,9 @@ def _refactor(
     while correctness_retries_total <= settings.max_correctness_retries:
         while semantic_retries <= settings.max_semantic_retries:
             try:
-                if settings.agent_type == 'agent':
+                if settings.agent_type == 'standard':
                     history, refactored_code, usage = chat(history, message)
-                elif settings.agent_type == 'agentic':
+                elif settings.agent_type == 'agent':
                     tool_calls, usage = run_openhands_task(message, repo_path)
                     total_tool_calls += tool_calls
 
@@ -210,7 +215,7 @@ def _refactor(
             total_tokens_in += usage['prompt_tokens']
             total_tokens_out += usage['completion_tokens']
 
-            if settings.agent_type == 'agent':
+            if settings.agent_type == 'standard':
                 file_source = unit['file_path'].read_text()
                 code_to_check = splice_function(
                     file_source, unit['function_info'], refactored_code
@@ -258,7 +263,7 @@ def _refactor(
 
         semantic_retries = 0  # reset for correctness loop
 
-        if settings.agent_type == 'agent':
+        if settings.agent_type == 'standard':
             file_source = unit['file_path'].read_text()
             updated_source = splice_function(
                 file_source, unit['function_info'], refactored_code
@@ -326,7 +331,7 @@ def _process_unit(unit: Unit, repo_path: Path) -> UnitResultSchema:
         system_prompt = SYSTEM_PROMPT_ACTIVE
 
         initial_message = f'{unit["task"]}'
-        if settings.agent_type == 'agent':
+        if settings.agent_type == 'standard':
             enclosing_code = unit['function_info']['source']
             initial_message = (
                 f'Enclosing code for context:\n\n```php\n{enclosing_code}\n```'
@@ -337,7 +342,7 @@ def _process_unit(unit: Unit, repo_path: Path) -> UnitResultSchema:
         system_prompt = SYSTEM_PROMPT_PASSIVE
 
         initial_message = f'{unit["task"]}'
-        if settings.agent_type == 'agent':
+        if settings.agent_type == 'standard':
             file_source = unit['file_path'].read_text()
             initial_message = (
                 f'Full source file for context:\n\n```php\n{file_source}\n```'
@@ -351,7 +356,7 @@ def _process_unit(unit: Unit, repo_path: Path) -> UnitResultSchema:
 
 
 def _process_file_units(
-    units: List[Unit], repo_path: Path
+    units: List[Unit], repo_path: Path, total_units: int
 ) -> List[UnitResultSchema]:
     """
     Process all units belonging to a single file sequentially.
@@ -360,13 +365,20 @@ def _process_file_units(
     version of the file; processing the same file from multiple threads
     concurrently would cause line-offset corruption.
     """
+    global _processed_unit_count
+
     results = []
     for unit in units:
         results.append(_process_unit(unit, repo_path))
+        with _processed_unit_count_lock:
+            _processed_unit_count += 1
+            logger.info(f'Processed unit {_processed_unit_count}/{total_units}')
     return results
 
 
-def _build_units_passive(repo_path: Path) -> List[Unit]:
+def _build_units_passive() -> List[Unit]:
+    repo_path = Path(settings.path_to_repository_src)
+
     units: List[Unit] = []
     for php_file in repo_path.rglob('*.php'):
         source = php_file.read_text()
@@ -386,9 +398,9 @@ def _build_units_passive(repo_path: Path) -> List[Unit]:
     return units
 
 
-def _build_units_active(
-    repo_path: Path, sonarqube_issues_path: Path
-) -> List[Unit]:
+def _build_units_active(sonarqube_issues_path: Path) -> List[Unit]:
+    repo_path = Path(settings.path_to_repository)
+
     issues: List[SonarQubeIssue] = json_loads(sonarqube_issues_path.read_text())
     units: List[Unit] = []
     for issue in issues:
@@ -424,10 +436,9 @@ def _run(
     copytree(base_repo, run_repo, symlinks=True, dirs_exist_ok=False)
 
     if settings.experiment_type == 'passive':
-        units = _build_units_passive(run_repo)
+        units = _build_units_passive()
     else:
         units = _build_units_active(
-            run_repo,
             Path(__file__).parent / 'sonarqube' / 'sonarqube_issues.json',
         )
 
@@ -435,13 +446,17 @@ def _run(
     for unit in units:
         by_file.setdefault(unit['file_path'], []).append(unit)
 
+    global _processed_unit_count
+    _processed_unit_count = 0
+    total_units = len(units)
+
     all_unit_results: List[UnitResultSchema] = []
 
     max_workers = min(len(by_file), settings.max_parallel_tasks)
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {
             executor.submit(
-                _process_file_units, file_units, run_repo
+                _process_file_units, file_units, run_repo, total_units
             ): file_path
             for file_path, file_units in by_file.items()
         }

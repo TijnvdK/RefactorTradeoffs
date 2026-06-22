@@ -45,7 +45,7 @@ class Settings(BaseSettings):
     correctness_check_timeout: int
 
     ## Agent settings ##
-    agent_type: Literal['agent', 'agentic']
+    agent_type: Literal['standard', 'agent']
     language: Literal['php']
 
     ## Experiment configuration ##
@@ -59,6 +59,7 @@ class Settings(BaseSettings):
     ## Paths ##
     job_dir: str = Field(default='/tmp/job_dir')
     path_to_repository: str = Field(default='/tmp/repository')
+    path_to_repository_src: str = Field(default='/tmp/repository/src')
     path_to_eb_test_sif: str = Field(default='/tmp/eb_test.sif')
     path_to_php82_lint_sif: str = Field(default='/tmp/php82_lint.sif')
 

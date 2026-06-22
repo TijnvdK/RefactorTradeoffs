@@ -5,11 +5,14 @@ from openhands.sdk import LLM, Agent, Conversation, Event
 from openhands.sdk.event.llm_convertible.action import ActionEvent
 from openhands.sdk.tool import Tool
 from openhands.tools.file_editor import FileEditorTool
-from openhands.tools.terminal import TerminalTool
 from openhands.tools.task_tracker import TaskTrackerTool
 from openhands.tools.grep import GrepTool
 from pydantic import SecretStr
 from src.globals.custom_exceptions import LLMCallFailed
+from src.pipeline.llm_providers.tools.php_tools import (
+    CorrectnessCheckEbTool,
+    SemanticCheckPhpTool,
+)
 from src.pipeline.llm_providers.vllm_client import TokenUsage
 from src.settings import settings
 
@@ -26,10 +29,11 @@ def run_openhands_task(task: str, working_dir: Path) -> Tuple[int, TokenUsage]:
     agent = Agent(
         llm=llm,
         tools=[
-            Tool(name=TerminalTool.name),
             Tool(name=FileEditorTool.name),
             Tool(name=TaskTrackerTool.name),
             Tool(name=GrepTool.name),
+            Tool(name=SemanticCheckPhpTool.name),
+            Tool(name=CorrectnessCheckEbTool.name),
         ],
     )
 

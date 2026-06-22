@@ -13,7 +13,7 @@ semantic_check_timeout: 30
 correctness_check_timeout: 300
 
 ## Agent settings ##
-agent_type: agent  # agent | agentic
+agent_type: standard  # standard | agent
 language: php  # php | [... other languages not yet supported]
 
 ## Experiment configurations ##

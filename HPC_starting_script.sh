@@ -9,15 +9,14 @@ set -euo pipefail
 
 nvidia-smi
 
+export EB_INSTANCE_NAME="eb_runner_${SLURM_JOB_ID:-}"
+
 # Cleanup any running apptainers on any exit to avoid leaving dangling
 # instances or processes.
 cleanup() {
-    apptainer instance list 2>/dev/null | awk 'NR>1 {print $1}' | xargs -r apptainer instance stop 2>/dev/null || true
+    apptainer instance stop "${EB_INSTANCE_NAME}" 2>/dev/null || true
 }
 trap cleanup EXIT
-# Clean up any leftover instances from previous jobs
-rm -rf $HOME/.apptainer
-apptainer instance list 2>/dev/null | awk 'NR>1 {print $1}' | xargs -r apptainer instance stop 2>/dev/null || true
 
 # Load environment variables from .env file if it exists
 set -a
@@ -25,7 +24,7 @@ set -a
 set +a
 
 # Create a fresh job directory
-export JOB_DIR=$(realpath "${TMPDIR}/${USER}")
+export JOB_DIR=$(realpath "${TMPDIR}/${USER}-agent")
 rm -rf $JOB_DIR
 
 [[ ! -d $JOB_DIR ]] && mkdir -p $JOB_DIR
@@ -39,6 +38,7 @@ export HF_HOME=$JOB_DIR/hf_cache
 export PATH_TO_REPOSITORY=$JOB_DIR/repository
 rm -rf $PATH_TO_REPOSITORY
 cp -r /home/${USER}/repository $PATH_TO_REPOSITORY
+export PATH_TO_REPOSITORY_SRC=$PATH_TO_REPOSITORY/src
 
 # Copy apptainer images to the job directory
 export PATH_TO_EB_TEST_SIF=$JOB_DIR/eb_test.sif
@@ -101,25 +101,25 @@ apptainer instance start \
     --bind "${JOB_DIR}/tmp:/tmp" \
     --bind "${PATH_TO_REPOSITORY}/src:/var/www/html/src" \
     --bind "${PHP_ENV_VAR_DIR}:/var/www/html/var" \
-    "${PATH_TO_EB_TEST_SIF}" eb_runner \
+    "${PATH_TO_EB_TEST_SIF}" "${EB_INSTANCE_NAME}" \
     > /dev/null 2>&1
 
 # Waiting for MariaDB to accept connections
 ELAPSED=0
-until apptainer exec "instance://eb_runner" \
+until apptainer exec "instance://${EB_INSTANCE_NAME}" \
         mysqladmin --socket=/tmp/eb_test_mysql.sock ping 2>/dev/null; do
     sleep 1
     ELAPSED=$((ELAPSED + 1))
     if [ "${ELAPSED}" -ge 60 ]; then
         echo "ERROR: MariaDB did not start within 600s." >&2
         echo "--- MariaDB log ---" >&2
-        apptainer exec "instance://eb_runner" cat /tmp/eb_mariadb.log
+        apptainer exec "instance://${EB_INSTANCE_NAME}" cat /tmp/eb_mariadb.log
         exit 1
     fi
 done
 
 # Creating test databases
-apptainer exec "instance://eb_runner" bash -c "
+apptainer exec "instance://${EB_INSTANCE_NAME}" bash -c "
 mysql --socket=/tmp/eb_test_mysql.sock -u root <<'SQL'
 CREATE DATABASE IF NOT EXISTS eb_test
     CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -143,3 +143,10 @@ export OPENHANDS_SUPPRESS_BANNER=1
 
 # Everything is loaded and Ok. Start the experiment pipeline.
 python -m src.pipeline.runner
+
+# Transfer the results back to the home directory
+BATCH_DIR="$HOME/job_${SLURM_JOB_ID}"
+mkdir -p "$BATCH_DIR"
+for run_dir in "$JOB_DIR"/run_*/; do
+    cp -r "$run_dir" "$BATCH_DIR/"
+done

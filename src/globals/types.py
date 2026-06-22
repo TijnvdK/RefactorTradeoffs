@@ -16,7 +16,7 @@ class UnitResultSchema(TypedDict):
 class ResultSchema(TypedDict):
     run_index: int
     experiment_type: Literal['passive', 'active']
-    agent_type: Literal['agent', 'agentic']
+    agent_type: Literal['standard', 'agent']
     model: str
     language: Literal['php']
     wall_time_seconds: float
