@@ -1,13 +1,11 @@
 ## LLM settings ##
-# vllm_model: mistralai/Devstral-2-123B-Instruct-2512
-vllm_model: Qwen/Qwen2.5-Coder-14B-Instruct
-# vllm_server_model_name: Devstral-2-123B-Instruct-2512
-vllm_server_model_name: Qwen2.5-Coder-14B-Instruct
+# Need a way to not have both change these and script. Probably use
+# Python instead or something.
+vllm_server_port: 59214
+vllm_model: mistralai/Devstral-2-123B-Instruct-2512
 vllm_api_url: http://localhost:59214/v1
-vllm_gpu_memory_utilization: 0.90
 vllm_max_model_len: 65536
-vllm_max_tokens: 65536
-vllm_tensor_parallel_size: 1
+vllm_tensor_parallel_size: 8
 
 ## Timeouts ##
 vllm_server_timeout: 600
@@ -20,10 +18,11 @@ language: php  # php | [... other languages not yet supported]
 
 ## Experiment configurations ##
 experiment_type: passive  # passive | active
-run_size: 20
+run_size: 1
 max_semantic_retries: 5
 max_correctness_retries: 5
 min_function_loc: 15
+max_parallel_tasks: 1
 
 ## SonarQube ##
 sq_url: http://localhost:9000

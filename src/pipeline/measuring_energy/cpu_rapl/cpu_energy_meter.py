@@ -20,12 +20,15 @@ class CPUEnergyMeter:
             logger.error(f'Error initializing RAPL: {_error}')
             raise
 
+        self._running: bool = False
+
     def start(self) -> None:
         """
         Start measuring CPU energy consumption. Use stop() to end the
         measurement and get the energy consumed in joules.
         """
         self._meter.begin()
+        self._running = True
 
     def stop(self) -> float:
         """
@@ -37,6 +40,7 @@ class CPUEnergyMeter:
         """
 
         self._meter.end()
+        self._running = False
 
         energy_J = self._meter.result.pkg
         if energy_J is None:
@@ -46,3 +50,12 @@ class CPUEnergyMeter:
             return 0.0
 
         return np.sum(np.array(energy_J) * 1e-6)
+
+    def is_running(self) -> bool:
+        """
+        Check if the energy meter is currently running.
+
+        Returns:
+            bool: True if the meter is running, False otherwise.
+        """
+        return self._running

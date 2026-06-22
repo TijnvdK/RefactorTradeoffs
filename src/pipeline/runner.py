@@ -6,6 +6,8 @@ from logging import (
 )
 from pathlib import Path
 from shutil import copytree
+from signal import SIGTERM
+from subprocess import DEVNULL, Popen
 from time import time
 from typing import Dict, List, TypedDict
 from json import dumps as json_dumps
@@ -14,6 +16,8 @@ from src.globals.types import ResultSchema, UnitResultSchema
 from src.pipeline.code_checks.correctness_checks import (
     correctness_check_eb,
 )
+from subprocess import run as subprocess_run
+from time import sleep
 from src.pipeline.code_checks.semantic_checks import semantic_check_php
 from src.pipeline.llm_context.tree_parser import (
     FunctionInfo,
@@ -32,6 +36,7 @@ from src.pipeline.measuring_energy.nvidia_gpu.gpu_energy_meter import (
 from src.settings import settings
 from json import loads as json_loads
 from src.sonarqube.parse_issues import SonarQubeIssue
+from requests import RequestException, get as requests_get
 
 logger = getLogger(__name__)
 
@@ -60,6 +65,81 @@ SYSTEM_PROMPT_ACTIVE = (
     "Do not change the function's name, parameters, or return type. "
     'Do not include any explanation outside the code block.'
 )
+
+
+def _start_vllm() -> Popen:
+    cmd = [
+        'python',
+        '-m',
+        'vllm.entrypoints.openai.api_server',
+        '--model',
+        settings.vllm_model,
+        '--enable-prefix-caching',
+        '--tensor-parallel-size',
+        str(settings.vllm_tensor_parallel_size),
+        '--max-model-len',
+        str(settings.vllm_max_model_len),
+        '--port',
+        str(settings.vllm_server_port),
+    ]
+    proc = Popen(cmd, stdout=DEVNULL, stderr=DEVNULL)
+    logger.info(
+        'vLLM server starting (pid %d) on port %d ...',
+        proc.pid,
+        settings.vllm_server_port,
+    )
+
+    health_url = f'http://localhost:{settings.vllm_server_port}/health'
+    elapsed = 0
+    while elapsed < settings.vllm_server_timeout:
+        try:
+            if requests_get(health_url, timeout=2).status_code == 200:
+                logger.info('vLLM server ready after %ds.', elapsed)
+                return proc
+        except RequestException:
+            pass
+
+        logger.info(
+            'Waiting for vLLM server to become healthy... (%ds elapsed)',
+            elapsed,
+        )
+        sleep(10)
+        elapsed += 10
+
+    proc.kill()
+    proc.wait()
+    raise RuntimeError(
+        f'vLLM server did not become healthy within {settings.vllm_server_timeout}s.'
+    )
+
+
+def _stop_vllm(proc: Popen) -> None:
+    logger.info('Stopping vLLM server (pid %d) ...', proc.pid)
+    proc.send_signal(SIGTERM)
+    try:
+        proc.wait(timeout=30)
+    except Exception:
+        logger.warning('vLLM did not exit after SIGTERM; sending SIGKILL.')
+        proc.kill()
+        proc.wait()
+
+    # Poll until all GPU memory is released.
+    elapsed = 0
+    while elapsed < 600:
+        result = subprocess_run(
+            ['nvidia-smi', '--query-compute-apps=pid', '--format=csv,noheader'],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode == 0 and result.stdout.strip() == '':
+            logger.info('GPU memory fully released after %ds.', elapsed)
+            return
+        sleep(10)
+        elapsed += 10
+
+    logger.warning(
+        'GPU memory not fully released after 600s; continuing anyway.'
+    )
 
 
 def _refactor(
@@ -130,11 +210,24 @@ def _refactor(
             total_tokens_in += usage['prompt_tokens']
             total_tokens_out += usage['completion_tokens']
 
-            passed, check_output = semantic_check_php(refactored_code)
+            if settings.agent_type == 'agent':
+                file_source = unit['file_path'].read_text()
+                code_to_check = splice_function(
+                    file_source, unit['function_info'], refactored_code
+                )
+            else:
+                code_to_check = refactored_code
+
+            passed, check_output = semantic_check_php(code_to_check)
             if passed:
+                logger.info(
+                    'Semantic check passed for %s in %s.',
+                    unit['function_info']['name'],
+                    unit['file_path'],
+                )
                 break
 
-            logger.debug(
+            logger.info(
                 'Semantic check failed (attempt %d) for %s: %s',
                 semantic_retries + 1,
                 unit['function_info']['name'],
@@ -174,13 +267,20 @@ def _refactor(
 
         passed, test_output = correctness_check_eb()
         if passed:
+            logger.info(
+                'Correctness check passed for %s in %s.',
+                unit['function_info']['name'],
+                unit['file_path'],
+            )
             break
 
-        logger.debug(
+        logger.info(
             'Correctness check failed (attempt %d) for %s.',
             correctness_retries_total + 1,
             unit['function_info']['name'],
         )
+
+        logger.info(f'test output: {test_output}')
 
         # Restore original so the next attempt starts from a clean state.
         unit['file_path'].write_text(original_source)
@@ -318,9 +418,10 @@ def _run(
     base_repo: Path,
     cpu_meter: CPUEnergyMeter,
     gpu_meter: GPUEnergyMeter,
+    wall_start: float,
 ):
     run_repo = Path(settings.job_dir) / f'run_{run_index}'
-    copytree(base_repo, run_repo, dirs_exist_ok=False)
+    copytree(base_repo, run_repo, symlinks=True, dirs_exist_ok=False)
 
     if settings.experiment_type == 'passive':
         units = _build_units_passive(run_repo)
@@ -334,13 +435,9 @@ def _run(
     for unit in units:
         by_file.setdefault(unit['file_path'], []).append(unit)
 
-    cpu_meter.start()
-    gpu_meter.start()
-    wall_start = time()
-
     all_unit_results: List[UnitResultSchema] = []
 
-    max_workers = min(len(by_file), 32)
+    max_workers = min(len(by_file), settings.max_parallel_tasks)
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {
             executor.submit(
@@ -368,7 +465,7 @@ def _run(
         run_index=run_index,
         experiment_type=settings.experiment_type,
         agent_type=settings.agent_type,
-        model=settings.vllm_server_model_name,
+        model=settings.vllm_model,
         language=settings.language,
         wall_time_seconds=round(wall_seconds, 2),
         cpu_energy_joules=round(cpu_joules, 4),
@@ -425,10 +522,26 @@ def runner():
             settings.run_size,
             settings.experiment_type,
             settings.agent_type,
-            settings.vllm_server_model_name,
+            settings.vllm_model,
         )
 
-        _run(run_index, base_repo, cpu_meter, gpu_meter)
+        cpu_meter.start()
+        gpu_meter.start()
+        wall_start = time()
+
+        vllm_process = _start_vllm()
+        try:
+            _run(run_index, base_repo, cpu_meter, gpu_meter, wall_start)
+        except Exception as exc:
+            logger.error('Unhandled error in run %d: %s', run_index, exc)
+        finally:
+            # Stop all meters to ensure we don't leave them running in case of
+            # an error.
+            if cpu_meter.is_running():
+                cpu_meter.stop()
+            gpu_meter.stop()
+            # Stop vLLM server
+            _stop_vllm(vllm_process)
 
 
 if __name__ == '__main__':

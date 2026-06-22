@@ -33,12 +33,10 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
 
 class Settings(BaseSettings):
     ## LLM settings ##
+    vllm_server_port: int
     vllm_model: str
-    vllm_server_model_name: str
     vllm_api_url: str
-    vllm_gpu_memory_utilization: float
     vllm_max_model_len: int
-    vllm_max_tokens: int
     vllm_tensor_parallel_size: int
 
     ## Timeouts ##
@@ -56,6 +54,7 @@ class Settings(BaseSettings):
     max_semantic_retries: int
     max_correctness_retries: int
     min_function_loc: int
+    max_parallel_tasks: int
 
     ## Paths ##
     job_dir: str = Field(default='/tmp/job_dir')

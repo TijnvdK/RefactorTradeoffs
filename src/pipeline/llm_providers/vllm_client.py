@@ -41,7 +41,6 @@ def _send_message_to_llm(messages: History) -> ChatCompletion:
     return _client.chat.completions.create(
         model=settings.vllm_model,
         messages=messages,
-        max_tokens=settings.vllm_max_tokens,
         timeout=settings.vllm_server_timeout,
     )
 

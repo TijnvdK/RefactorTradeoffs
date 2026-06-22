@@ -1,13 +1,23 @@
 #!/bin/bash
+#SBATCH --partition=capacity
+#SBATCH --nodes=1
+#SBATCH --exclusive
+#SBATCH --time=12:00:00
+#SBATCH --job-name=EB_Refactor
 
 set -euo pipefail
+
+nvidia-smi
 
 # Cleanup any running apptainers on any exit to avoid leaving dangling
 # instances or processes.
 cleanup() {
-    apptainer instance stop --all 2>/dev/null || true
+    apptainer instance list 2>/dev/null | awk 'NR>1 {print $1}' | xargs -r apptainer instance stop 2>/dev/null || true
 }
 trap cleanup EXIT
+# Clean up any leftover instances from previous jobs
+rm -rf $HOME/.apptainer
+apptainer instance list 2>/dev/null | awk 'NR>1 {print $1}' | xargs -r apptainer instance stop 2>/dev/null || true
 
 # Load environment variables from .env file if it exists
 set -a
@@ -79,7 +89,8 @@ apptainer exec \
         --datadir=/var/lib/mysql \
         --auth-root-authentication-method=normal \
         --skip-test-db \
-        --tmpdir=/var/lib/mysql
+        --tmpdir=/var/lib/mysql \
+        > /dev/null 2>&1
 
 [[ ! -d "${PHP_ENV_VAR_DIR}/cache" ]] && mkdir -p "${PHP_ENV_VAR_DIR}/cache"
 [[ ! -d "${PHP_ENV_VAR_DIR}/log" ]] && mkdir -p "${PHP_ENV_VAR_DIR}/log"
@@ -90,7 +101,8 @@ apptainer instance start \
     --bind "${JOB_DIR}/tmp:/tmp" \
     --bind "${PATH_TO_REPOSITORY}/src:/var/www/html/src" \
     --bind "${PHP_ENV_VAR_DIR}:/var/www/html/var" \
-    "${PATH_TO_EB_TEST_SIF}" eb_runner
+    "${PATH_TO_EB_TEST_SIF}" eb_runner \
+    > /dev/null 2>&1
 
 # Waiting for MariaDB to accept connections
 ELAPSED=0
@@ -99,7 +111,7 @@ until apptainer exec "instance://eb_runner" \
     sleep 1
     ELAPSED=$((ELAPSED + 1))
     if [ "${ELAPSED}" -ge 60 ]; then
-        echo "ERROR: MariaDB did not start within 60 s." >&2
+        echo "ERROR: MariaDB did not start within 600s." >&2
         echo "--- MariaDB log ---" >&2
         apptainer exec "instance://eb_runner" cat /tmp/eb_mariadb.log
         exit 1
@@ -126,22 +138,8 @@ SQL
 source "./.venv/bin/activate"
 export PYTHONPATH="$(pwd):${PYTHONPATH:-}"
 
-# Start vLLM server
-python -m vllm.entrypoints.openai.api_server \
-    --model Qwen/Qwen2.5-Coder-14B-Instruct \
-    --enable-prefix-caching \
-    --tensor-parallel-size 2 \
-    --port 59214 &
-
-ELAPSED=0
-until curl -s http://localhost:59214/health > /dev/null; do
-    sleep 1
-    ELAPSED=$((ELAPSED + 1))
-    if [ "${ELAPSED}" -ge 60 ]; then
-        echo "ERROR: vLLM server did not start within 60 s." >&2
-        exit 1
-    fi
-done
+export OPENHANDS_LOG_LEVEL=ERROR
+export OPENHANDS_SUPPRESS_BANNER=1
 
 # Everything is loaded and Ok. Start the experiment pipeline.
 python -m src.pipeline.runner

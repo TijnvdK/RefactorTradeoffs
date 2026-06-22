@@ -21,10 +21,10 @@ RESULT=0
 }
 
 # Schema reset
-./bin/console doctrine:schema:drop --force --env=ci || {
+./bin/console doctrine:schema:drop --force --env=ci 2>/dev/null || {
     echo "FATAL: doctrine:schema:drop failed." >&2; exit 1
 }
-./bin/console doctrine:schema:create --env=ci || {
+./bin/console doctrine:schema:create --env=ci 2>/dev/null || {
     echo "FATAL: doctrine:schema:create failed." >&2; exit 1
 }
 

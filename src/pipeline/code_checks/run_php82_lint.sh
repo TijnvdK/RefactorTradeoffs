@@ -7,10 +7,9 @@ fi
 
 FILE="$1"
 
-# $PATH_TO_PHP82_LINT_SIF is exported from the root script.
-raw=$(apptainer run "$PATH_TO_PHP82_LINT_SIF" "$FILE" 2>&1) && exit 0
+raw=$(apptainer run --bind "$JOB_DIR:$JOB_DIR" "$PATH_TO_PHP82_LINT_SIF" "$FILE" 2>&1) && exit 0
 
-echo "$raw" \
+filtered=$(echo "$raw" \
     | grep -E "^(PHP Parse error|PHP Fatal error)" \
     | sed -E 's/^PHP (Parse|Fatal) error:[[:space:]]*//' \
     | sed -E 's/ in (.+) on line ([0-9]+)$//' \
@@ -18,6 +17,12 @@ echo "$raw" \
         loc=$(echo "$raw" | grep -Eo 'in .+ on line [0-9]+' | head -1)
         lineno=$(echo "$loc" | grep -Eo '[0-9]+$')
         echo "ERROR | line $lineno | $msg"
-done
+    done)
+
+if [[ -z "$filtered" ]]; then
+    echo "$raw"
+else
+    echo "$filtered"
+fi
 
 exit 1

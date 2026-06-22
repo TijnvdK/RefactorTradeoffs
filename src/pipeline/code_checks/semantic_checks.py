@@ -23,10 +23,12 @@ def semantic_check_php(code: str) -> Tuple[bool, str]:
     """
 
     stripped = code.strip()
-    if not stripped or not (
-        stripped.startswith('<?php') or stripped.startswith('<?')
-    ):
-        return (False, 'Code does not start with a valid PHP opening tag.')
+    if not stripped:
+        return (False, 'Code is empty.')
+
+    # Append a php tag if missing to ensure the syntax check runs correctly
+    if not (stripped.startswith('<?php') or stripped.startswith('<?')):
+        code = '<?php\n' + code
 
     with NamedTemporaryFile(
         suffix='.php', mode='w', delete=False, dir=settings.job_dir
@@ -42,7 +44,9 @@ def semantic_check_php(code: str) -> Tuple[bool, str]:
                 capture_output=True,
                 timeout=settings.semantic_check_timeout,
             )
-            return (result.returncode == 0, result.stdout.decode())
+
+            output = (result.stdout.decode() + result.stderr.decode()).strip()
+            return (result.returncode == 0, output)
         except TimeoutExpired:
             logger.error(
                 'PHP syntax check timed out after '
