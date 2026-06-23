@@ -8,7 +8,7 @@ fi
 APPTAINER_RESULT=0
 OUTPUT_DIR="$1"
 
-apptainer exec --env JUNIT_DIR="/tmp/phpunit-results" "instance://eb_runner" bash <<'INNER' || APPTAINER_RESULT=$?
+apptainer exec --env JUNIT_DIR="/tmp/phpunit-results" "instance://${EB_INSTANCE_NAME:-}" bash <<'INNER' || APPTAINER_RESULT=$?
 set -euo pipefail
 exec > /dev/null
 cd /var/www/html

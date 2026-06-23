@@ -86,7 +86,11 @@ def _start_vllm() -> Popen:
         str(settings.vllm_max_model_len),
         '--port',
         str(settings.vllm_server_port),
+        '--tool-call-parser',
+        'mistral',
+        '--enable-auto-tool-choice',
     ]
+
     proc = Popen(cmd, stdout=DEVNULL, stderr=DEVNULL)
     logger.info(
         'vLLM server starting (pid %d) on port %d ...',
@@ -161,24 +165,22 @@ def _refactor(
     semantic_retries_total = 0
     correctness_retries_total = 0
 
-    def _rejected_result(
-        unit: Unit,
-        llm_calls: int,
-        tokens_in: int,
-        tokens_out: int,
-        semantic_retries: int,
-        correctness_retries: int,
-    ) -> UnitResultSchema:
+    def _rejected_result() -> UnitResultSchema:
+        # Write back original source to ensure a clean state for the next
+        # attempt or the next unit.
+        unit['file_path'].write_text(original_source)
+
         return UnitResultSchema(
             name=unit['function_info']['name'],
             file=str(unit['file_path']),
             accepted=False,
-            semantic_retries=semantic_retries,
-            correctness_retries=correctness_retries,
-            llm_calls=llm_calls,
-            tokens_in=tokens_in,
-            tokens_out=tokens_out,
-            tool_calls=None,
+            equal_to_original=True,
+            semantic_retries=semantic_retries_total,
+            correctness_retries=correctness_retries_total,
+            llm_calls=total_llm_calls,
+            tokens_in=total_tokens_in,
+            tokens_out=total_tokens_out,
+            tool_calls=total_tool_calls,
         )
 
     while correctness_retries_total <= settings.max_correctness_retries:
@@ -202,14 +204,7 @@ def _refactor(
                     unit['file_path'],
                     exc,
                 )
-                return _rejected_result(
-                    unit,
-                    total_llm_calls,
-                    total_tokens_in,
-                    total_tokens_out,
-                    semantic_retries_total,
-                    correctness_retries_total,
-                )
+                return _rejected_result()
 
             total_llm_calls += 1
             total_tokens_in += usage['prompt_tokens']
@@ -222,6 +217,25 @@ def _refactor(
                 )
             else:
                 code_to_check = refactored_code
+
+            if code_to_check == original_source:
+                logger.info(
+                    'No changes detected for %s in %s, No checks needed.',
+                    unit['function_info']['name'],
+                    unit['file_path'],
+                )
+                return UnitResultSchema(
+                    name=unit['function_info']['name'],
+                    file=str(unit['file_path']),
+                    accepted=True,
+                    equal_to_original=True,
+                    semantic_retries=semantic_retries_total,
+                    correctness_retries=correctness_retries_total,
+                    llm_calls=total_llm_calls,
+                    tokens_in=total_tokens_in,
+                    tokens_out=total_tokens_out,
+                    tool_calls=total_tool_calls,
+                )
 
             passed, check_output = semantic_check_php(code_to_check)
             if passed:
@@ -252,14 +266,7 @@ def _refactor(
                 unit['function_info']['name'],
                 unit['file_path'],
             )
-            return _rejected_result(
-                unit,
-                total_llm_calls,
-                total_tokens_in,
-                total_tokens_out,
-                semantic_retries_total,
-                correctness_retries_total,
-            )
+            return _rejected_result()
 
         semantic_retries = 0  # reset for correctness loop
 
@@ -304,25 +311,19 @@ def _refactor(
         )
         # Ensure original is restored
         unit['file_path'].write_text(original_source)
-        return _rejected_result(
-            unit,
-            total_llm_calls,
-            total_tokens_in,
-            total_tokens_out,
-            semantic_retries_total,
-            correctness_retries_total,
-        )
+        return _rejected_result()
 
     return UnitResultSchema(
         name=unit['function_info']['name'],
         file=str(unit['file_path']),
         accepted=True,
+        equal_to_original=False,
         semantic_retries=semantic_retries_total,
         correctness_retries=correctness_retries_total,
         llm_calls=total_llm_calls,
         tokens_in=total_tokens_in,
         tokens_out=total_tokens_out,
-        tool_calls=None,
+        tool_calls=total_tool_calls,
     )
 
 
@@ -376,11 +377,9 @@ def _process_file_units(
     return results
 
 
-def _build_units_passive() -> List[Unit]:
-    repo_path = Path(settings.path_to_repository_src)
-
+def _build_units_passive(repo_path: Path) -> List[Unit]:
     units: List[Unit] = []
-    for php_file in repo_path.rglob('*.php'):
+    for php_file in (repo_path / 'src').rglob('*.php'):
         source = php_file.read_text()
         for fn in extract_functions(source, min_loc=settings.min_function_loc):
             units.append(
@@ -398,9 +397,9 @@ def _build_units_passive() -> List[Unit]:
     return units
 
 
-def _build_units_active(sonarqube_issues_path: Path) -> List[Unit]:
-    repo_path = Path(settings.path_to_repository)
-
+def _build_units_active(
+    repo_path: Path, sonarqube_issues_path: Path
+) -> List[Unit]:
     issues: List[SonarQubeIssue] = json_loads(sonarqube_issues_path.read_text())
     units: List[Unit] = []
     for issue in issues:
@@ -436,9 +435,10 @@ def _run(
     copytree(base_repo, run_repo, symlinks=True, dirs_exist_ok=False)
 
     if settings.experiment_type == 'passive':
-        units = _build_units_passive()
+        units = _build_units_passive(run_repo)
     else:
         units = _build_units_active(
+            run_repo,
             Path(__file__).parent / 'sonarqube' / 'sonarqube_issues.json',
         )
 

@@ -5,6 +5,7 @@ class UnitResultSchema(TypedDict):
     name: str
     file: str
     accepted: bool
+    equal_to_original: bool
     semantic_retries: int
     correctness_retries: int
     llm_calls: int

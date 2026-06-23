@@ -1,7 +1,7 @@
 from logging import getLogger
 from pathlib import Path
 from typing import Tuple
-from openhands.sdk import LLM, Agent, Conversation, Event
+from openhands.sdk import LLM, Agent, AgentContext, Conversation, Event
 from openhands.sdk.event.llm_convertible.action import ActionEvent
 from openhands.sdk.tool import Tool
 from openhands.tools.file_editor import FileEditorTool
@@ -35,6 +35,15 @@ def run_openhands_task(task: str, working_dir: Path) -> Tuple[int, TokenUsage]:
             Tool(name=SemanticCheckPhpTool.name),
             Tool(name=CorrectnessCheckEbTool.name),
         ],
+        agent_context=AgentContext(
+            system_message_suffix=(
+                'You are refactoring a single PHP function. Use file_editor to'
+                ' read the target file, make the refactoring, then write the '
+                'changes back. Call semantic_check_php to verify syntax, then '
+                'correctness_check_eb to verify tests pass. Call finish when '
+                'done.'
+            )
+        ),
     )
 
     tool_call_count = 0
@@ -48,6 +57,8 @@ def run_openhands_task(task: str, working_dir: Path) -> Tuple[int, TokenUsage]:
         agent=agent,
         workspace=working_dir,
         callbacks=[_on_event],
+        max_iteration_per_run=50,
+        visualizer=None,
     )
     conversation.send_message(task)
 
