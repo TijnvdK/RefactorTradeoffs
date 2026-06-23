@@ -30,6 +30,7 @@ class GPUEnergyMeter:
             raise
 
         self._before: List[float] = []
+        self._running: bool = False
 
     def start(self) -> None:
         """
@@ -40,6 +41,7 @@ class GPUEnergyMeter:
             nvmlDeviceGetTotalEnergyConsumption(handle)
             for handle in self._gpu_handles
         ]
+        self._running = True
 
     def stop(self) -> float:
         """
@@ -53,6 +55,8 @@ class GPUEnergyMeter:
             nvmlDeviceGetTotalEnergyConsumption(handle)
             for handle in self._gpu_handles
         ]
+        self._running = False
+
         total_energy_J = (
             sum(
                 after_i - before_i
@@ -61,3 +65,12 @@ class GPUEnergyMeter:
             / 1e3
         )
         return total_energy_J
+
+    def is_running(self) -> bool:
+        """
+        Check if the energy meter is currently running.
+
+        Returns:
+            bool: True if the meter is running, False otherwise.
+        """
+        return self._running

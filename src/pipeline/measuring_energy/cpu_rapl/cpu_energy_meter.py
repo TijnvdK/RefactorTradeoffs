@@ -1,4 +1,5 @@
 from logging import getLogger
+from threading import Event, Thread
 import numpy as np
 from pyRAPL import Measurement, setup as rapl_setup
 
@@ -6,7 +7,7 @@ logger = getLogger(__name__)
 
 
 class CPUEnergyMeter:
-    def __init__(self):
+    def __init__(self, poll_interval: int = 30):
         """
         Create a CPUEnergyMeter instance.
 
@@ -20,15 +21,32 @@ class CPUEnergyMeter:
             logger.error(f'Error initializing RAPL: {_error}')
             raise
 
+        self._accumulated_j = 0.0
+        self._poll_interval = poll_interval
         self._running: bool = False
+        self._stop_event = Event()
+        self._thread = None
 
     def start(self) -> None:
         """
         Start measuring CPU energy consumption. Use stop() to end the
         measurement and get the energy consumed in joules.
         """
-        self._meter.begin()
+
+        self._accumulated_j = 0.0
+        self._stop_event.clear()
         self._running = True
+        self._meter.begin()
+        self._thread = Thread(target=self._poll_loop, daemon=True)
+        self._thread.start()
+
+    def _poll_loop(self):
+        while not self._stop_event.wait(self._poll_interval):
+            self._meter.end()
+            pkg = self._meter.result.pkg
+            if pkg is not None:
+                self._accumulated_j += np.sum(np.array(pkg) * 1e-6)
+            self._meter.begin()
 
     def stop(self) -> float:
         """
@@ -39,17 +57,16 @@ class CPUEnergyMeter:
                 start() was called. If RAPL did not return a value, returns 0.0.
         """
 
-        self._meter.end()
+        self._stop_event.set()
+        if self._thread is not None:
+            self._thread.join()
         self._running = False
 
-        energy_J = self._meter.result.pkg
-        if energy_J is None:
-            logger.warning(
-                'RAPL did not return a value for CPU energy consumption.'
-            )
-            return 0.0
-
-        return np.sum(np.array(energy_J) * 1e-6)
+        self._meter.end()
+        pkg = self._meter.result.pkg
+        if pkg is not None:
+            self._accumulated_j += np.sum(np.array(pkg) * 1e-6)
+        return self._accumulated_j
 
     def is_running(self) -> bool:
         """

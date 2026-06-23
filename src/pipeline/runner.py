@@ -335,7 +335,7 @@ def _process_unit(unit: Unit, repo_path: Path) -> UnitResultSchema:
         if settings.agent_type == 'standard':
             enclosing_code = unit['function_info']['source']
             initial_message = (
-                f'Enclosing code for context:\n\n```php\n{enclosing_code}\n```'
+                f'Enclosing code for context:\n\n```php\n{enclosing_code}\n\n```'
                 + initial_message
             )
 
@@ -346,7 +346,7 @@ def _process_unit(unit: Unit, repo_path: Path) -> UnitResultSchema:
         if settings.agent_type == 'standard':
             file_source = unit['file_path'].read_text()
             initial_message = (
-                f'Full source file for context:\n\n```php\n{file_source}\n```'
+                f'Full source file for context:\n\n```php\n{file_source}\n```\n\n'
                 + initial_message
             )
 
@@ -554,7 +554,8 @@ def runner():
             # an error.
             if cpu_meter.is_running():
                 cpu_meter.stop()
-            gpu_meter.stop()
+            if gpu_meter.is_running():
+                gpu_meter.stop()
             # Stop vLLM server
             _stop_vllm(vllm_process)
 

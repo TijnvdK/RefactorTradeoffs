@@ -24,7 +24,7 @@ set -a
 set +a
 
 # Create a fresh job directory
-export JOB_DIR=$(realpath "${TMPDIR}/${USER}-agent")
+export JOB_DIR=$(realpath "${TMPDIR}/${USER}/job_${SLURM_JOB_ID}")
 rm -rf $JOB_DIR
 
 [[ ! -d $JOB_DIR ]] && mkdir -p $JOB_DIR
