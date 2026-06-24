@@ -2,7 +2,8 @@ from logging import getLogger
 from pathlib import Path
 from subprocess import TimeoutExpired, run as subprocess_run
 from tempfile import TemporaryDirectory
-from typing import List, Tuple, TypedDict
+from typing import List, Optional, Tuple, TypedDict
+from src.pipeline.worker_context import get_worker_index
 from src.settings import settings
 from glob import glob
 from xml.etree import ElementTree
@@ -16,7 +17,7 @@ class EBTestFailure(TypedDict):
     message: str
 
 
-def run_eb_tests(output_dir: str) -> int:
+def run_eb_tests(output_dir: str, worker_index: int) -> int:
     """
     Runs the EB test suite using the provided output directory. The test
     results are expected to be saved in JUnit XML format in the specified
@@ -24,6 +25,7 @@ def run_eb_tests(output_dir: str) -> int:
 
     Args:
         output_dir (str): The directory where the test results should be saved.
+        worker_index (int): Index of the isolated EngineBlock environment.
 
     Returns:
         int: The return code of the test execution.
@@ -32,7 +34,7 @@ def run_eb_tests(output_dir: str) -> int:
     _runner = Path(__file__).parent / 'run_eb_tests.sh'
 
     try:
-        cmd = ['bash', str(_runner), output_dir]
+        cmd = ['bash', str(_runner), output_dir, str(worker_index)]
         result = subprocess_run(cmd, timeout=settings.correctness_check_timeout)
     except TimeoutExpired:
         logger.error(
@@ -122,9 +124,18 @@ def parse_and_format_eb_test_results(output_dir: str) -> str:
     return format_failures(parse_eb_test_results(output_dir))
 
 
-def correctness_check_eb() -> Tuple[bool, str]:
+def correctness_check_eb(
+    worker_index: Optional[int] = None,
+) -> Tuple[bool, str]:
     """
-    Runs the EB test suite.
+    Runs the EB test suite against an isolated EngineBlock environment.
+
+    Args:
+        worker_index (Optional[int]): Which isolated environment to run against.
+            When None (the standard, synchronous pipeline path) it is resolved
+            from the worker index bound to the calling thread. Callers that may
+            execute on a different thread than the one that claimed the worker
+            must pass it explicitly.
 
     Returns:
         Tuple[bool, str]: A tuple where the first element is a boolean
@@ -133,8 +144,11 @@ def correctness_check_eb() -> Tuple[bool, str]:
             errors.
     """
 
+    if worker_index is None:
+        worker_index = get_worker_index()
+
     with TemporaryDirectory() as output_dir:
-        runner_return_code = run_eb_tests(output_dir)
+        runner_return_code = run_eb_tests(output_dir, worker_index)
         # Try to parse anything anyway even if the runner failed,
         # to get as much information as possible.
         failures = parse_and_format_eb_test_results(output_dir)

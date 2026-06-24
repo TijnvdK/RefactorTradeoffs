@@ -14,12 +14,33 @@ from src.pipeline.llm_providers.tools.php_tools import (
     SemanticCheckPhpTool,
 )
 from src.pipeline.llm_providers.vllm_client import TokenUsage
+from src.pipeline.worker_context import (
+    set_worker_index,
+    worker_index_from_repo,
+)
 from src.settings import settings
 
 logger = getLogger(__name__)
 
 
 def run_openhands_task(task: str, working_dir: Path) -> Tuple[int, TokenUsage]:
+    """
+    Execute a task `task` with OpenHands with as environment `working_dir`.
+
+    Args:
+        task (str): The task to be executed.
+        working_dir (Path): The working dir to be the environment.
+
+    Raises:
+        LLMCallFailed: If the OpenHands session failed.
+
+    Returns:
+        Tuple[int, TokenUsage]: A tuple containing the number of tool calls
+            made during the session and the token usage.
+    """
+
+    set_worker_index(worker_index_from_repo(working_dir))
+
     llm = LLM(
         model=f'openai/{settings.vllm_model}',
         api_key=SecretStr('EMPTY'),

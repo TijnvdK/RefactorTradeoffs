@@ -12,6 +12,7 @@ from pydantic import Field
 
 from src.pipeline.code_checks.correctness_checks import correctness_check_eb
 from src.pipeline.code_checks.semantic_checks import semantic_check_php
+from src.pipeline.worker_context import worker_index_from_repo
 
 
 class SemanticCheckPhpAction(Action):
@@ -77,7 +78,16 @@ class CorrectnessCheckEbExecutor(
     def __call__(
         self, action: CorrectnessCheckEbAction, conversation=None
     ) -> CorrectnessCheckEbObservation:
-        passed, output = correctness_check_eb()
+        # The executor may run on a different thread than the pipeline worker
+        # that claimed the isolated environment, so the thread-local worker
+        # index is unreliable here. Resolve it from the conversation workspace
+        # (the worker's working copy, named worker_{k}) instead.
+        worker_index = None
+        if conversation is not None:
+            worker_index = worker_index_from_repo(
+                conversation.workspace.working_dir
+            )
+        passed, output = correctness_check_eb(worker_index)
         return CorrectnessCheckEbObservation(passed=passed, output=output)
 
 

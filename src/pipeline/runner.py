@@ -5,9 +5,8 @@ from logging import (
     INFO as logging_INFO,
 )
 from pathlib import Path
-from shutil import copytree
-from signal import SIGTERM
-from subprocess import DEVNULL, Popen
+from queue import SimpleQueue
+from shutil import copyfile, copytree
 from threading import Lock
 from time import time
 from typing import Dict, List, TypedDict
@@ -17,8 +16,6 @@ from src.globals.types import ResultSchema, UnitResultSchema
 from src.pipeline.code_checks.correctness_checks import (
     correctness_check_eb,
 )
-from subprocess import run as subprocess_run
-from time import sleep
 from src.pipeline.code_checks.semantic_checks import semantic_check_php
 from src.pipeline.llm_context.tree_parser import (
     FunctionInfo,
@@ -28,16 +25,24 @@ from src.pipeline.llm_context.tree_parser import (
 )
 from src.pipeline.llm_providers.openhands import run_openhands_task
 from src.pipeline.llm_providers.vllm_client import History, chat
+from src.pipeline.llm_providers.vllm_server import (
+    start_vllm_server,
+    stop_vllm_server,
+)
 from src.pipeline.measuring_energy.cpu_rapl.cpu_energy_meter import (
     CPUEnergyMeter,
 )
 from src.pipeline.measuring_energy.nvidia_gpu.gpu_energy_meter import (
     GPUEnergyMeter,
 )
+from src.pipeline.worker_context import (
+    claim_worker_index,
+    get_worker_repo,
+    provision_worker_repos,
+)
 from src.settings import settings
 from json import loads as json_loads
 from src.sonarqube.parse_issues import SonarQubeIssue
-from requests import RequestException, get as requests_get
 
 logger = getLogger(__name__)
 
@@ -72,88 +77,29 @@ _processed_unit_count = 0
 _processed_unit_count_lock = Lock()
 
 
-def _start_vllm() -> Popen:
-    cmd = [
-        'python',
-        '-m',
-        'vllm.entrypoints.openai.api_server',
-        '--model',
-        settings.vllm_model,
-        '--enable-prefix-caching',
-        '--tensor-parallel-size',
-        str(settings.vllm_tensor_parallel_size),
-        '--max-model-len',
-        str(settings.vllm_max_model_len),
-        '--port',
-        str(settings.vllm_server_port),
-        '--tool-call-parser',
-        'mistral',
-        '--enable-auto-tool-choice',
-    ]
-
-    proc = Popen(cmd, stdout=DEVNULL, stderr=DEVNULL)
-    logger.info(
-        'vLLM server starting (pid %d) on port %d ...',
-        proc.pid,
-        settings.vllm_server_port,
-    )
-
-    health_url = f'http://localhost:{settings.vllm_server_port}/health'
-    elapsed = 0
-    while elapsed < settings.vllm_server_timeout:
-        try:
-            if requests_get(health_url, timeout=2).status_code == 200:
-                logger.info('vLLM server ready after %ds.', elapsed)
-                return proc
-        except RequestException:
-            pass
-
-        logger.info(
-            'Waiting for vLLM server to become healthy... (%ds elapsed)',
-            elapsed,
-        )
-        sleep(10)
-        elapsed += 10
-
-    proc.kill()
-    proc.wait()
-    raise RuntimeError(
-        f'vLLM server did not become healthy within {settings.vllm_server_timeout}s.'
-    )
-
-
-def _stop_vllm(proc: Popen) -> None:
-    logger.info('Stopping vLLM server (pid %d) ...', proc.pid)
-    proc.send_signal(SIGTERM)
-    try:
-        proc.wait(timeout=30)
-    except Exception:
-        logger.warning('vLLM did not exit after SIGTERM; sending SIGKILL.')
-        proc.kill()
-        proc.wait()
-
-    # Poll until all GPU memory is released.
-    elapsed = 0
-    while elapsed < 600:
-        result = subprocess_run(
-            ['nvidia-smi', '--query-compute-apps=pid', '--format=csv,noheader'],
-            capture_output=True,
-            text=True,
-        )
-        if result.returncode == 0 and result.stdout.strip() == '':
-            logger.info('GPU memory fully released after %ds.', elapsed)
-            return
-        sleep(10)
-        elapsed += 10
-
-    logger.warning(
-        'GPU memory not fully released after 600s; continuing anyway.'
-    )
-
-
 def _refactor(
     history: History, message: str, repo_path: Path, unit: Unit
 ) -> UnitResultSchema:
+    """
+    Perform a singular refactoring operation. This involves performing the
+    LLM refactoring, checking its semantic correctness, and checking its
+    functionality correctness.
+
+
+    Args:
+        history (History): The starting history of the refactoring operation.
+        message (str): The initial refactoring task.
+        repo_path (Path): The path to the repository containing the source
+            files.
+        unit (Unit): The unit to be refactored.
+
+    Raises:
+        RuntimeError: If the agent type is unknown.
+
+    Returns:
+        UnitResultSchema: The result of the refactoring operation.
+    """
+
     original_source = unit['file_path'].read_text()
 
     total_llm_calls = 0
@@ -328,6 +274,18 @@ def _refactor(
 
 
 def _process_unit(unit: Unit, repo_path: Path) -> UnitResultSchema:
+    """
+    Process a single unit. This will function will create the starting
+    history field with the system prompt before calling `_refactor`.
+
+    Args:
+        unit (Unit): The unit to process.
+        repo_path (Path): The path to the repository.
+
+    Returns:
+        UnitResultSchema: The result of the processing.
+    """
+
     if settings.experiment_type == 'active':
         system_prompt = SYSTEM_PROMPT_ACTIVE
 
@@ -357,7 +315,10 @@ def _process_unit(unit: Unit, repo_path: Path) -> UnitResultSchema:
 
 
 def _process_file_units(
-    units: List[Unit], repo_path: Path, total_units: int
+    units: List[Unit],
+    run_repo: Path,
+    total_units: int,
+    worker_index_pool: 'SimpleQueue[int]',
 ) -> List[UnitResultSchema]:
     """
     Process all units belonging to a single file sequentially.
@@ -365,21 +326,94 @@ def _process_file_units(
     File-level sequencing is required because each unit may splice a new
     version of the file; processing the same file from multiple threads
     concurrently would cause line-offset corruption.
+
+    All edits are rebased onto this worker's bound working copy so that the
+    worker's correctness check (run against its own isolated Apptainer instance)
+    tests exactly the spliced code.
+
+    Args:
+        units (List[Unit]): A list of units to process for a single file.
+        run_repo (Path): The path to the current run's repository.
+        total_units (int): The total number of units across all files, for
+            progress logging.
+        worker_index_pool (SimpleQueue[int]): A queue of available worker
+            indices.
+
+    Returns:
+        List[UnitResultSchema]: A list of results for each processed unit.
     """
+
+    def _rebase_to_worker(
+        file_path: Path, run_repo: Path, worker_index: int
+    ) -> Path:
+        """
+        Map a unit file path under the run repo onto the calling worker's bound
+        working copy, so writes land in the tree the worker's instance tests.
+
+        Args:
+            file_path (Path): The path to the unit's source file.
+            run_repo (Path): The path to the current run's repository.
+            worker_index (int): The index of the worker thread.
+
+        Returns:
+            Path: The path to the unit's source file in the worker's bound
+                working copy.
+        """
+
+        relative = file_path.relative_to(run_repo / 'src')
+        return get_worker_repo(worker_index) / 'src' / relative
+
     global _processed_unit_count
 
-    results = []
+    worker_index = claim_worker_index(worker_index_pool)
+    worker_repo = get_worker_repo(worker_index)
+
+    results: List[UnitResultSchema] = []
+
     for unit in units:
-        results.append(_process_unit(unit, repo_path))
+        worker_unit = Unit(
+            task=unit['task'],
+            file_path=_rebase_to_worker(
+                unit['file_path'], run_repo, worker_index
+            ),
+            function_info=unit['function_info'],
+        )
+        results.append(_process_unit(worker_unit, worker_repo))
+
         with _processed_unit_count_lock:
             _processed_unit_count += 1
             logger.info(f'Processed unit {_processed_unit_count}/{total_units}')
+
+    # Merge this file's accepted refactors back from the worker's bound working
+    # copy into the run repo.
+    if units:
+        worker_file = _rebase_to_worker(
+            units[0]['file_path'], run_repo, worker_index
+        )
+        copyfile(worker_file, units[0]['file_path'])
+
     return results
 
 
 def _build_units_passive(repo_path: Path) -> List[Unit]:
+    """
+    Build a list of units for passive refactoring. Each unit corresponds to a
+    function in the source files under the given repository path.
+    The task is: <i>'''
+    Refactor the function `{function_name}` in `{file_path}` to be more
+    efficient and green, while maintaining its functionality and function
+    signature.'''</i>
+
+    Args:
+        repo_path (Path): The path to the repository containing source files.
+
+    Returns:
+        List[Unit]: A list of units, each representing a function to be
+            refactored.
+    """
+
     units: List[Unit] = []
-    for php_file in (repo_path / 'src').rglob('*.php'):
+    for php_file in (repo_path).rglob(f'*.{settings.language}'):
         source = php_file.read_text()
         for fn in extract_functions(source, min_loc=settings.min_function_loc):
             units.append(
@@ -400,6 +434,24 @@ def _build_units_passive(repo_path: Path) -> List[Unit]:
 def _build_units_active(
     repo_path: Path, sonarqube_issues_path: Path
 ) -> List[Unit]:
+    """
+    Build a list of units for active refactoring. Each unit corresponds to a
+    SonarQube issue in the source files under the given repository path.
+    The task is: <i>'''
+    Fix the SonarQube issue: {issue_message} in file `{file_path}` at line
+    `{line_number}`. Do not change the function signature of affected
+    functions.'''</i>
+
+    Args:
+        repo_path (Path): The path to the repository containing source files.
+        sonarqube_issues_path (Path): The path to the JSON file containing
+            SonarQube issues.
+
+    Returns:
+        List[Unit]: A list of units, each representing a SonarQube issue to
+            be fixed.
+    """
+
     issues: List[SonarQubeIssue] = json_loads(sonarqube_issues_path.read_text())
     units: List[Unit] = []
     for issue in issues:
@@ -424,18 +476,34 @@ def _build_units_active(
     return units
 
 
-def _run(
+def perform_run(
     run_index: int,
     base_repo: Path,
     cpu_meter: CPUEnergyMeter,
     gpu_meter: GPUEnergyMeter,
     wall_start: float,
 ):
+    """
+    Performs a singular experiment run.
+
+    Args:
+        run_index (int): The current run number.
+        base_repo (Path): Path to the repository to be refactored.
+        cpu_meter (CPUEnergyMeter): Meter for measuring CPU energy consumption.
+        gpu_meter (GPUEnergyMeter): Meter for measuring GPU energy consumption.
+        wall_start (float): Start time for wall clock measurement.
+
+    Side Effects:
+        - Creates a new run directory under settings.job_dir.
+        - Writes the results of the run to a JSON file in the results directory.
+    """
+
     run_repo = Path(settings.job_dir) / f'run_{run_index}'
     copytree(base_repo, run_repo, symlinks=True, dirs_exist_ok=False)
+    provision_worker_repos(run_repo)
 
     if settings.experiment_type == 'passive':
-        units = _build_units_passive(run_repo)
+        units = _build_units_passive(run_repo / 'src')
     else:
         units = _build_units_active(
             run_repo,
@@ -453,10 +521,21 @@ def _run(
     all_unit_results: List[UnitResultSchema] = []
 
     max_workers = min(len(by_file), settings.max_parallel_tasks)
+
+    # Pool of isolated-environment indices, one per worker thread. Each thread
+    # claims a distinct index on its first task and keeps it.
+    worker_index_pool: 'SimpleQueue[int]' = SimpleQueue()
+    for worker_index in range(max_workers):
+        worker_index_pool.put(worker_index)
+
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {
             executor.submit(
-                _process_file_units, file_units, run_repo, total_units
+                _process_file_units,
+                file_units,
+                run_repo,
+                total_units,
+                worker_index_pool,
             ): file_path
             for file_path, file_units in by_file.items()
         }
@@ -519,11 +598,9 @@ def _run(
 
 
 def runner():
-    logging_basicConfig(
-        level=logging_INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s',
-        force=True,
-    )
+    """
+    Starting point for the experiments. Performs each run sequentially.
+    """
 
     base_repo = Path(settings.path_to_repository)
 
@@ -532,21 +609,20 @@ def runner():
 
     for run_index in range(1, settings.run_size + 1):
         logger.info(
-            'Starting run %d / %d  [%s · %s · %s]',
-            run_index,
-            settings.run_size,
-            settings.experiment_type,
-            settings.agent_type,
-            settings.vllm_model,
+            f'Starting run {run_index}/{settings.run_size}\n'
+            f'  | Experiment Type: {settings.experiment_type}\n'
+            f'  | Agent Type: {settings.agent_type}\n'
+            f'  | Model: {settings.vllm_model}'
         )
 
         cpu_meter.start()
         gpu_meter.start()
         wall_start = time()
 
-        vllm_process = _start_vllm()
+        vllm_process = start_vllm_server()
+
         try:
-            _run(run_index, base_repo, cpu_meter, gpu_meter, wall_start)
+            perform_run(run_index, base_repo, cpu_meter, gpu_meter, wall_start)
         except Exception as exc:
             logger.error('Unhandled error in run %d: %s', run_index, exc)
         finally:
@@ -556,9 +632,15 @@ def runner():
                 cpu_meter.stop()
             if gpu_meter.is_running():
                 gpu_meter.stop()
-            # Stop vLLM server
-            _stop_vllm(vllm_process)
+
+            stop_vllm_server(vllm_process)
 
 
 if __name__ == '__main__':
+    logging_basicConfig(
+        level=logging_INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        force=True,
+    )
+
     runner()

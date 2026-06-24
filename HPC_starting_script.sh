@@ -11,10 +11,9 @@ nvidia-smi
 
 export EB_INSTANCE_NAME="eb_runner_${SLURM_JOB_ID:-}"
 
-# Cleanup any running apptainers on any exit to avoid leaving dangling
-# instances or processes.
+# Cleanup any running apptainers on exit to avoid leaving dangling instances.
 cleanup() {
-    apptainer instance stop "${EB_INSTANCE_NAME}" 2>/dev/null || true
+    apptainer instance stop "${EB_INSTANCE_NAME}_w"'*' 2>/dev/null || true
 }
 trap cleanup EXIT
 
@@ -71,55 +70,72 @@ export LD_LIBRARY_PATH=/usr/lib64:${LD_LIBRARY_PATH:-}
 export PATH=/usr/bin:${PATH:-}
 # ```
 
+# Activate Python (needed early to resolve the configured concurrency level).
+source "./.venv/bin/activate"
+export PYTHONPATH="$(pwd):${PYTHONPATH:-}"
+
+NUM_WORKERS=$(python -c 'from src.settings import settings; print(settings.max_parallel_tasks)')
+
 # If you are refactoring EngineBlock, you need to setup the PHP environment.
 # Uncomment the following lines to setup this environment.
 # ---
-export PHP_ENV_MYSQL_DATA=$JOB_DIR/.eb_test_mysql
-export PHP_ENV_VAR_DIR=$JOB_DIR/.eb_var
+echo "Provisioning ${NUM_WORKERS} isolated EngineBlock environment(s)."
 
-# Initialize SQL data
+for ((k = 0; k < NUM_WORKERS; k++)); do
+    # The src/ working copies are (re)populated from the run repo by the Python
+    # pipeline at the start of every run; here we only need the directories to
+    # exist so the bind mounts resolve.
+    INSTANCE_NAME="${EB_INSTANCE_NAME}_w${k}"
+    MYSQL_DATA="${JOB_DIR}/.eb_test_mysql_w${k}"
+    VAR_DIR="${JOB_DIR}/.eb_var_w${k}"
+    TMP_DIR="${JOB_DIR}/tmp_w${k}"
+    WORKER_SRC="${JOB_DIR}/worker_${k}/src"
 
-[[ ! -d "${PHP_ENV_MYSQL_DATA}" ]] && mkdir -p "${PHP_ENV_MYSQL_DATA}"
-# mysql_install_db runs as the current user; no --user flag needed since
-# mysqld won't attempt a uid switch when already running as non-root.
-apptainer exec \
-    --bind "${PHP_ENV_MYSQL_DATA}:/var/lib/mysql" \
-    "${PATH_TO_EB_TEST_SIF}" \
-    mysql_install_db \
-        --datadir=/var/lib/mysql \
-        --auth-root-authentication-method=normal \
-        --skip-test-db \
-        --tmpdir=/var/lib/mysql \
+    mkdir -p "${MYSQL_DATA}" "${VAR_DIR}/cache" "${VAR_DIR}/log" \
+        "${TMP_DIR}" "${WORKER_SRC}"
+
+    # Initialize SQL data. mysql_install_db runs as the current user; no --user
+    # flag needed since mysqld won't attempt a uid switch when already running
+    # as non-root.
+    apptainer exec \
+        --bind "${MYSQL_DATA}:/var/lib/mysql" \
+        "${PATH_TO_EB_TEST_SIF}" \
+        mysql_install_db \
+            --datadir=/var/lib/mysql \
+            --auth-root-authentication-method=normal \
+            --skip-test-db \
+            --tmpdir=/var/lib/mysql \
+            > /dev/null 2>&1
+
+    # Start this worker's EngineBlock test environment.
+    apptainer instance start \
+        --bind "${MYSQL_DATA}:/var/lib/mysql" \
+        --bind "${TMP_DIR}:/tmp" \
+        --bind "${WORKER_SRC}:/var/www/html/src" \
+        --bind "${VAR_DIR}:/var/www/html/var" \
+        "${PATH_TO_EB_TEST_SIF}" "${INSTANCE_NAME}" \
         > /dev/null 2>&1
-
-[[ ! -d "${PHP_ENV_VAR_DIR}/cache" ]] && mkdir -p "${PHP_ENV_VAR_DIR}/cache"
-[[ ! -d "${PHP_ENV_VAR_DIR}/log" ]] && mkdir -p "${PHP_ENV_VAR_DIR}/log"
-
-# Start the EngineBlock test environment
-apptainer instance start \
-    --bind "${PHP_ENV_MYSQL_DATA}:/var/lib/mysql" \
-    --bind "${JOB_DIR}/tmp:/tmp" \
-    --bind "${PATH_TO_REPOSITORY}/src:/var/www/html/src" \
-    --bind "${PHP_ENV_VAR_DIR}:/var/www/html/var" \
-    "${PATH_TO_EB_TEST_SIF}" "${EB_INSTANCE_NAME}" \
-    > /dev/null 2>&1
-
-# Waiting for MariaDB to accept connections
-ELAPSED=0
-until apptainer exec "instance://${EB_INSTANCE_NAME}" \
-        mysqladmin --socket=/tmp/eb_test_mysql.sock ping 2>/dev/null; do
-    sleep 1
-    ELAPSED=$((ELAPSED + 1))
-    if [ "${ELAPSED}" -ge 60 ]; then
-        echo "ERROR: MariaDB did not start within 600s." >&2
-        echo "--- MariaDB log ---" >&2
-        apptainer exec "instance://${EB_INSTANCE_NAME}" cat /tmp/eb_mariadb.log
-        exit 1
-    fi
 done
 
-# Creating test databases
-apptainer exec "instance://${EB_INSTANCE_NAME}" bash -c "
+# Wait for every worker's MariaDB to accept connections.
+for ((k = 0; k < NUM_WORKERS; k++)); do
+    INSTANCE_NAME="${EB_INSTANCE_NAME}_w${k}"
+
+    ELAPSED=0
+    until apptainer exec "instance://${INSTANCE_NAME}" \
+            mysqladmin --socket=/tmp/eb_test_mysql.sock ping 2>/dev/null; do
+        sleep 1
+        ELAPSED=$((ELAPSED + 1))
+        if [ "${ELAPSED}" -ge 60 ]; then
+            echo "ERROR: MariaDB for ${INSTANCE_NAME} did not start in time." >&2
+            echo "--- MariaDB log ---" >&2
+            apptainer exec "instance://${INSTANCE_NAME}" cat /tmp/eb_mariadb.log
+            exit 1
+        fi
+    done
+
+    # Creating test databases
+    apptainer exec "instance://${INSTANCE_NAME}" bash -c "
 mysql --socket=/tmp/eb_test_mysql.sock -u root <<'SQL'
 CREATE DATABASE IF NOT EXISTS eb_test
     CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -132,11 +148,8 @@ GRANT ALL PRIVILEGES ON eb.*      TO 'ebrw'@'localhost';
 FLUSH PRIVILEGES;
 SQL
 "
+done
 # ---
-
-# Activate Python
-source "./.venv/bin/activate"
-export PYTHONPATH="$(pwd):${PYTHONPATH:-}"
 
 export OPENHANDS_LOG_LEVEL=ERROR
 export OPENHANDS_SUPPRESS_BANNER=1

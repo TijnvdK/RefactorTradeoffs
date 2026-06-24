@@ -1,4 +1,5 @@
 from logging import getLogger
+from os import unlink
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Tuple
@@ -34,22 +35,32 @@ def semantic_check_php(code: str) -> Tuple[bool, str]:
         suffix='.php', mode='w', delete=False, dir=settings.job_dir
     ) as _file:
         _file.write(code)
+        temp_path = _file.name
 
-        _runner = Path(__file__).parent / 'run_php82_lint.sh'
+    _runner = Path(__file__).parent / 'run_php82_lint.sh'
 
+    try:
+        cmd = ['bash', str(_runner), temp_path]
+        result = subprocess_run(
+            cmd,
+            capture_output=True,
+            timeout=settings.semantic_check_timeout,
+        )
+
+        output = (result.stdout.decode() + result.stderr.decode()).strip()
+        return (result.returncode == 0, output)
+    except TimeoutExpired:
+        logger.error(
+            'PHP syntax check timed out after '
+            f'{settings.semantic_check_timeout} seconds.'
+        )
+        return (False, 'PHP syntax check timed out.')
+    finally:
         try:
-            cmd = ['bash', str(_runner), _file.name]
-            result = subprocess_run(
-                cmd,
-                capture_output=True,
-                timeout=settings.semantic_check_timeout,
+            unlink(temp_path)
+        except OSError as _error:
+            logger.warning(
+                'Failed to remove temporary lint file %s: %s',
+                temp_path,
+                _error,
             )
-
-            output = (result.stdout.decode() + result.stderr.decode()).strip()
-            return (result.returncode == 0, output)
-        except TimeoutExpired:
-            logger.error(
-                'PHP syntax check timed out after '
-                f'{settings.semantic_check_timeout} seconds.'
-            )
-            return (False, 'PHP syntax check timed out.')
