@@ -1,4 +1,11 @@
-set -euo pipefail
+#!/bin/bash
+
+# Deliberately not setting `set -e` here. The script is called from Python, and
+# we want to capture the exit code and output of the PHP linter, even if it
+# fails. If we set `set -e`, the script would exit immediately on a non-zero
+# exit code, and we wouldn't be able to capture the output.
+
+set -uo pipefail
 
 if [[ $# -ne 2 ]]; then
     echo "Usage: $0 <absolute path to output directory> <worker index>" >&2
@@ -13,8 +20,7 @@ WORKER_INDEX="$2"
 # HPC_starting_script.sh. The instance name and the host-side results
 # directory are both suffixed with the worker index so concurrent correctness
 # checks never share a MariaDB instance, a bound src/ tree, or JUnit output.
-# EB_INSTANCE_NAME and JOB_DIR are exported by HPC_starting_script.sh; do not
-# hardcode them here.
+# EB_INSTANCE_NAME and JOB_DIR are exported by HPC_starting_script.sh.
 INSTANCE_NAME="${EB_INSTANCE_NAME:-}_w${WORKER_INDEX}"
 RESULTS_HOST_DIR="${JOB_DIR}/tmp_w${WORKER_INDEX}/phpunit-results"
 

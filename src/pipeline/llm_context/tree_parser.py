@@ -1,4 +1,4 @@
-from typing import List, TypedDict
+from typing import List, Optional, TypedDict
 import tree_sitter_php
 from tree_sitter import Language, Node, Parser
 
@@ -113,6 +113,46 @@ def splice_function(
     )
 
     return ''.join(before) + replacement + ''.join(after)
+
+
+def relocate_function(
+    source: str, function_info: FunctionInfo
+) -> Optional[FunctionInfo]:
+    """
+    Find a function's *current* location in ``source`` by re-parsing it.
+
+    Function line numbers captured when a file is first scanned go stale as
+    soon as another function in the same file is spliced (the line count
+    shifts). Splicing with stale numbers cuts the wrong range and corrupts the
+    file, so callers must re-resolve a function against the current source right
+    before splicing.
+
+    The match is keyed first on the original function text, then falls back to
+    a unique name match. Returns the up-to-date FunctionInfo,
+    or None if the function can no longer be located.
+
+    Args:
+        source (str): The current contents of the file.
+        function_info (FunctionInfo): The function to relocate, as captured at
+            scan time (its ``source`` and ``name`` are used as match keys).
+
+    Returns:
+        Optional[FunctionInfo]: The function's current location, or None.
+    """
+
+    candidates = extract_functions(source)
+
+    by_source = [
+        fn for fn in candidates if fn['source'] == function_info['source']
+    ]
+    if len(by_source) == 1:
+        return by_source[0]
+
+    by_name = [fn for fn in candidates if fn['name'] == function_info['name']]
+    if len(by_name) == 1:
+        return by_name[0]
+
+    return None
 
 
 def find_enclosing_function(source: str, line_number: int) -> FunctionInfo:

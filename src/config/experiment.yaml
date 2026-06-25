@@ -22,7 +22,7 @@ run_size: 1
 max_semantic_retries: 5
 max_correctness_retries: 5
 min_function_loc: 15
-max_parallel_tasks: 4
+max_parallel_tasks: 2
 
 ## SonarQube ##
 sq_url: http://localhost:9000

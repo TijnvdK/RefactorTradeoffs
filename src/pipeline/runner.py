@@ -21,9 +21,10 @@ from src.pipeline.llm_context.tree_parser import (
     FunctionInfo,
     extract_functions,
     find_enclosing_function,
+    relocate_function,
     splice_function,
 )
-from src.pipeline.llm_providers.openhands import run_openhands_task
+from src.pipeline.llm_providers.openhands import OpenHandsSession
 from src.pipeline.llm_providers.vllm_client import History, chat
 from src.pipeline.llm_providers.vllm_server import (
     start_vllm_server,
@@ -111,6 +112,13 @@ def _refactor(
     semantic_retries_total = 0
     correctness_retries_total = 0
 
+    # For the agent type, create one persistent session so that retry
+    # feedback messages are sent as follow-up turns in the same conversation,
+    # giving the agent full context of prior attempts and errors.
+    openhands_session = (
+        OpenHandsSession(repo_path) if settings.agent_type == 'agent' else None
+    )
+
     def _rejected_result() -> UnitResultSchema:
         # Write back original source to ensure a clean state for the next
         # attempt or the next unit.
@@ -135,9 +143,12 @@ def _refactor(
                 if settings.agent_type == 'standard':
                     history, refactored_code, usage = chat(history, message)
                 elif settings.agent_type == 'agent':
-                    tool_calls, usage = run_openhands_task(message, repo_path)
-                    total_tool_calls += tool_calls
-
+                    assert openhands_session is not None
+                    tool_calls_before = openhands_session.tool_call_count
+                    usage = openhands_session.send(message)
+                    total_tool_calls += (
+                        openhands_session.tool_call_count - tool_calls_before
+                    )
                     refactored_code = unit['file_path'].read_text()
                 else:
                     raise RuntimeError(
@@ -158,8 +169,18 @@ def _refactor(
 
             if settings.agent_type == 'standard':
                 file_source = unit['file_path'].read_text()
+                current_info = relocate_function(
+                    file_source, unit['function_info']
+                )
+                if current_info is None:
+                    logger.warning(
+                        'Could not relocate %s in %s - keeping original.',
+                        unit['function_info']['name'],
+                        unit['file_path'],
+                    )
+                    return _rejected_result()
                 code_to_check = splice_function(
-                    file_source, unit['function_info'], refactored_code
+                    file_source, current_info, refactored_code
                 )
             else:
                 code_to_check = refactored_code
@@ -190,6 +211,7 @@ def _refactor(
                     unit['function_info']['name'],
                     unit['file_path'],
                 )
+                checked_source = code_to_check
                 break
 
             logger.info(
@@ -198,11 +220,17 @@ def _refactor(
                 unit['function_info']['name'],
                 check_output,
             )
-            message = (
-                'The code you returned has a syntax error. Fix it and return '
-                'only the corrected function in a ```php code block.\n\n'
-                f'Error:\n{check_output}'
-            )
+            if settings.agent_type == 'standard':
+                message = (
+                    'The code you returned has a syntax error. Fix it and '
+                    'return only the corrected function in a ```php code '
+                    f'block.\n\nError:\n{check_output}'
+                )
+            else:
+                message = (
+                    'The file you wrote has a syntax error:\n\nError:\n'
+                    f'{check_output}\n\nFix it.'
+                )
 
             semantic_retries += 1
             semantic_retries_total += 1
@@ -217,11 +245,7 @@ def _refactor(
         semantic_retries = 0  # reset for correctness loop
 
         if settings.agent_type == 'standard':
-            file_source = unit['file_path'].read_text()
-            updated_source = splice_function(
-                file_source, unit['function_info'], refactored_code
-            )
-            unit['file_path'].write_text(updated_source)
+            unit['file_path'].write_text(checked_source)
 
         passed, test_output = correctness_check_eb()
         if passed:
@@ -241,12 +265,18 @@ def _refactor(
         logger.info(f'test output: {test_output}')
 
         # Restore original so the next attempt starts from a clean state.
-        unit['file_path'].write_text(original_source)
-        message = (
-            'The refactored function caused test failures. Fix it and return '
-            'only the corrected function in a ```php code block.\n\n'
-            f'Test output:\n{test_output}'
-        )
+        if settings.agent_type == 'standard':
+            unit['file_path'].write_text(original_source)
+            message = (
+                'The refactored function caused test failures. Fix it and '
+                'return only the corrected function in a ```php code '
+                f'block.\n\nTest output:\n{test_output}'
+            )
+        else:
+            message = (
+                'The tests failed after your changes:\n\nTest output:\n'
+                f'{test_output}\n\nFix it.'
+            )
 
         correctness_retries_total += 1
     else:
@@ -255,8 +285,6 @@ def _refactor(
             unit['function_info']['name'],
             unit['file_path'],
         )
-        # Ensure original is restored
-        unit['file_path'].write_text(original_source)
         return _rejected_result()
 
     return UnitResultSchema(

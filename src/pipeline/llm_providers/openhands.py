@@ -1,7 +1,7 @@
 from logging import getLogger
 from pathlib import Path
-from typing import Tuple
 from openhands.sdk import LLM, Agent, AgentContext, Conversation, Event
+from openhands.sdk.conversation.base import BaseConversation
 from openhands.sdk.event.llm_convertible.action import ActionEvent
 from openhands.sdk.tool import Tool
 from openhands.tools.file_editor import FileEditorTool
@@ -22,90 +22,95 @@ from src.settings import settings
 
 logger = getLogger(__name__)
 
+_SYSTEM_MESSAGE_SUFFIX = (
+    'You are refactoring PHP code. Use file_editor to read files, make the '
+    'refactoring, then write the changes back. Call semantic_check_php to '
+    'verify syntax, then correctness_check_eb to verify tests pass. '
+    'Call finish when done. Do NOT output any explanations, '
+    'summaries, or commentary; only make file edits and tool calls.'
+)
 
-def run_openhands_task(task: str, working_dir: Path) -> Tuple[int, TokenUsage]:
+
+class OpenHandsSession:
     """
-    Execute a task `task` with OpenHands with as environment `working_dir`.
-
-    Args:
-        task (str): The task to be executed.
-        working_dir (Path): The working dir to be the environment.
-
-    Raises:
-        LLMCallFailed: If the OpenHands session failed.
-
-    Returns:
-        Tuple[int, TokenUsage]: A tuple containing the number of tool calls
-            made during the session and the token usage.
+    A persistent OpenHands conversation session that supports multi-turn
+    interaction. Create once per unit, then call `send(message)` for each
+    turn (initial task + any retry feedback messages).
     """
 
-    set_worker_index(worker_index_from_repo(working_dir))
+    def __init__(self, working_dir: Path) -> None:
+        set_worker_index(worker_index_from_repo(working_dir))
 
-    llm = LLM(
-        model=f'openai/{settings.vllm_model}',
-        api_key=SecretStr('EMPTY'),
-        base_url=settings.vllm_api_url,
-    )
-
-    agent = Agent(
-        llm=llm,
-        tools=[
-            Tool(name=FileEditorTool.name),
-            Tool(name=TaskTrackerTool.name),
-            Tool(name=GrepTool.name),
-            Tool(name=SemanticCheckPhpTool.name),
-            Tool(name=CorrectnessCheckEbTool.name),
-        ],
-        agent_context=AgentContext(
-            system_message_suffix=(
-                'You are refactoring a single PHP function. Use file_editor to'
-                ' read the target file, make the refactoring, then write the '
-                'changes back. Call semantic_check_php to verify syntax, then '
-                'correctness_check_eb to verify tests pass. Call finish when '
-                'done.'
-            )
-        ),
-    )
-
-    tool_call_count = 0
-
-    def _on_event(event: Event) -> None:
-        nonlocal tool_call_count
-        if isinstance(event, ActionEvent):
-            tool_call_count += 1
-
-    conversation = Conversation(
-        agent=agent,
-        workspace=working_dir,
-        callbacks=[_on_event],
-        max_iteration_per_run=50,
-        visualizer=None,
-    )
-    conversation.send_message(task)
-
-    try:
-        conversation.run()
-    except Exception as _error:
-        logger.error('OpenHands session failed: %s', _error)
-        raise LLMCallFailed(_error)
-
-    metrics = llm.metrics
-    if metrics:
-        usage = metrics.accumulated_token_usage
-        if usage:
-            token_usage = TokenUsage(
-                prompt_tokens=usage.prompt_tokens,
-                completion_tokens=usage.completion_tokens,
-            )
-        else:
-            logger.warning(
-                'OpenHands LLM accumulated_token_usage is None, returning zero token usage.'
-            )
-            token_usage = TokenUsage(prompt_tokens=0, completion_tokens=0)
-    else:
-        logger.warning(
-            'OpenHands LLM metrics are None, returning zero token usage.'
+        self._llm = LLM(
+            model=f'openai/{settings.vllm_model}',
+            api_key=SecretStr('EMPTY'),
+            base_url=settings.vllm_api_url,
         )
-        token_usage = TokenUsage(prompt_tokens=0, completion_tokens=0)
+        self._tool_call_count = 0
 
-    return (tool_call_count, token_usage)
+        agent = Agent(
+            llm=self._llm,
+            tools=[
+                Tool(name=FileEditorTool.name),
+                Tool(name=TaskTrackerTool.name),
+                Tool(name=GrepTool.name),
+                Tool(name=SemanticCheckPhpTool.name),
+                Tool(name=CorrectnessCheckEbTool.name),
+            ],
+            agent_context=AgentContext(
+                system_message_suffix=_SYSTEM_MESSAGE_SUFFIX
+            ),
+        )
+
+        def _on_event(event: Event) -> None:
+            if isinstance(event, ActionEvent):
+                self._tool_call_count += 1
+
+        self._conversation: BaseConversation = Conversation(
+            agent=agent,
+            workspace=working_dir,
+            callbacks=[_on_event],
+            max_iteration_per_run=50,
+            visualizer=None,
+        )
+
+    def send(self, message: str) -> TokenUsage:
+        """
+        Send a message to the agent and run until it finishes.
+
+        Returns the incremental token usage for this turn.
+        """
+        metrics_before = self._llm.metrics
+        tokens_before_in = 0
+        tokens_before_out = 0
+        if metrics_before and metrics_before.accumulated_token_usage:
+            tokens_before_in = (
+                metrics_before.accumulated_token_usage.prompt_tokens
+            )
+            tokens_before_out = (
+                metrics_before.accumulated_token_usage.completion_tokens
+            )
+
+        self._conversation.send_message(message)
+        try:
+            self._conversation.run()
+        except Exception as _error:
+            logger.error('OpenHands session failed: %s', _error)
+            raise LLMCallFailed(_error)
+
+        metrics_after = self._llm.metrics
+        if metrics_after and metrics_after.accumulated_token_usage:
+            usage = metrics_after.accumulated_token_usage
+            return TokenUsage(
+                prompt_tokens=usage.prompt_tokens - tokens_before_in,
+                completion_tokens=usage.completion_tokens - tokens_before_out,
+            )
+
+        logger.warning(
+            'OpenHands LLM metrics unavailable after run, returning zero token usage.'
+        )
+        return TokenUsage(prompt_tokens=0, completion_tokens=0)
+
+    @property
+    def tool_call_count(self) -> int:
+        return self._tool_call_count
