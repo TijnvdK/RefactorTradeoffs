@@ -24,6 +24,11 @@ WORKER_INDEX="$2"
 INSTANCE_NAME="${EB_INSTANCE_NAME:-}_w${WORKER_INDEX}"
 RESULTS_HOST_DIR="${JOB_DIR}/tmp_w${WORKER_INDEX}/phpunit-results"
 
+# Start from a clean results dir so a unit never parses stale XML left by a
+# previous unit on this same worker.
+rm -rf "${RESULTS_HOST_DIR}"
+mkdir -p "${RESULTS_HOST_DIR}"
+
 apptainer exec --env JUNIT_DIR="/tmp/phpunit-results" "instance://${INSTANCE_NAME}" bash <<'INNER' || APPTAINER_RESULT=$?
 set -euo pipefail
 exec > /dev/null
@@ -83,4 +88,5 @@ exit $RESULT
 INNER
 
 mkdir -p "${OUTPUT_DIR}"
-cp "${RESULTS_HOST_DIR}/"*.xml "${OUTPUT_DIR}/"
+cp "${RESULTS_HOST_DIR}/"*.xml "${OUTPUT_DIR}/" 2>/dev/null || true
+exit "${APPTAINER_RESULT}"

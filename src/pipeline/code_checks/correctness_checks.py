@@ -74,7 +74,13 @@ def parse_and_format_eb_test_results(output_dir: str) -> str:
         failures: List[EBTestFailure] = []
         for xml_path in sorted(glob(f'{output_dir}/phpunit-*.xml')):
             suite_name = Path(xml_path).stem.removeprefix('phpunit-')
-            tree = ElementTree.parse(xml_path)
+            try:
+                tree = ElementTree.parse(xml_path)
+            except ElementTree.ParseError as _error:
+                logger.warning(
+                    'Could not parse JUnit results %s: %s', xml_path, _error
+                )
+                continue
             for testcase in tree.iter('testcase'):
                 for child in testcase:
                     if child.tag not in ('failure', 'error'):

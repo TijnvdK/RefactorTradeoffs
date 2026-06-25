@@ -61,6 +61,9 @@ def _collect_functions(
             )
         )
 
+        # Do not descend into a captured function.
+        return
+
     for child in node.children:
         _collect_functions(child, lines, results)
 
