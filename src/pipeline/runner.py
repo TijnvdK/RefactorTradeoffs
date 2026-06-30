@@ -528,7 +528,6 @@ def perform_run(
     base_repo: Path,
     cpu_meter: CPUEnergyMeter,
     gpu_meter: GPUEnergyMeter,
-    wall_start: float,
 ):
     """
     Performs a singular experiment run.
@@ -538,7 +537,6 @@ def perform_run(
         base_repo (Path): Path to the repository to be refactored.
         cpu_meter (CPUEnergyMeter): Meter for measuring CPU energy consumption.
         gpu_meter (GPUEnergyMeter): Meter for measuring GPU energy consumption.
-        wall_start (float): Start time for wall clock measurement.
 
     Side Effects:
         - Creates a new run directory under settings.job_dir.
@@ -548,6 +546,10 @@ def perform_run(
     run_repo = Path(settings.job_dir) / f'run_{run_index}'
     copytree(base_repo, run_repo, symlinks=True, dirs_exist_ok=False)
     provision_worker_repos(run_repo)
+
+    cpu_meter.start()
+    gpu_meter.start()
+    wall_start = time()
 
     if settings.experiment_type == 'passive':
         units = _build_units_passive(run_repo / 'src')
@@ -655,6 +657,8 @@ def runner():
     cpu_meter = CPUEnergyMeter()
     gpu_meter = GPUEnergyMeter()
 
+    vllm_process = start_vllm_server()
+
     for run_index in range(1, settings.run_size + 1):
         logger.info(
             f'Starting run {run_index}/{settings.run_size}\n'
@@ -663,14 +667,8 @@ def runner():
             f'  | Model: {settings.vllm_model}'
         )
 
-        cpu_meter.start()
-        gpu_meter.start()
-        wall_start = time()
-
-        vllm_process = start_vllm_server()
-
         try:
-            perform_run(run_index, base_repo, cpu_meter, gpu_meter, wall_start)
+            perform_run(run_index, base_repo, cpu_meter, gpu_meter)
         except Exception as exc:
             logger.error('Unhandled error in run %d: %s', run_index, exc)
         finally:
@@ -681,13 +679,13 @@ def runner():
             if gpu_meter.is_running():
                 gpu_meter.stop()
 
-            stop_vllm_server(vllm_process)
-
         logger.info(
             f'Run {run_index} complete - waiting {settings.cooldown_period} '
             'seconds before next run.'
         )
         sleep(settings.cooldown_period)
+
+    stop_vllm_server(vllm_process)
 
 
 if __name__ == '__main__':

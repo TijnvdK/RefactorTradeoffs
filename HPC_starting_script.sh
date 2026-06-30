@@ -2,7 +2,7 @@
 #SBATCH --partition=capacity
 #SBATCH --nodes=1
 #SBATCH --exclusive
-#SBATCH --time=12:00:00
+#SBATCH --time=30:00:00
 #SBATCH --job-name=EB_Refactor
 
 set -euo pipefail
@@ -23,7 +23,7 @@ set -a
 set +a
 
 # Create a fresh job directory
-export JOB_DIR=$(realpath "${TMPDIR}/${USER}/job_${SLURM_JOB_ID}")
+export JOB_DIR=$TMPDIR/$USER/job_$SLURM_JOB_ID
 rm -rf $JOB_DIR
 
 [[ ! -d $JOB_DIR ]] && mkdir -p $JOB_DIR
