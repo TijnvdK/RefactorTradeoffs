@@ -1,6 +1,4 @@
-## LLM settings ##
-# Need a way to not have both change these and script. Probably use
-# Python instead or something.
+## vLLM settings ##
 vllm_server_port: 59214
 vllm_model: mistralai/Devstral-2-123B-Instruct-2512
 vllm_api_url: http://localhost:59214/v1
@@ -9,20 +7,23 @@ vllm_tensor_parallel_size: 8
 
 ## Timeouts ##
 vllm_server_timeout: 600
-semantic_check_timeout: 30
+syntax_check_timeout: 30
 correctness_check_timeout: 300
 
-## Agent settings ##
-agent_type: standard  # standard | agent
-language: php  # php | [... other languages not yet supported]
+## LLM settings ##
+ai_type: traditional  # traditional | agent
+# Selects a registered repository profile (see
+# src/pipeline/code_checks/repositories/).
+repository_profile: engineblock  # engineblock is the only supported repository
 
 ## Experiment configurations ##
 experiment_type: passive  # passive | active
-run_size: 1
-max_semantic_retries: 5
+run_size: 20
+max_syntax_retries: 5
 max_correctness_retries: 5
 min_function_loc: 15
 max_parallel_tasks: 2
+cooldown_period: 60
 
 ## SonarQube ##
 sq_url: http://localhost:9000

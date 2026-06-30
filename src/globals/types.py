@@ -6,7 +6,7 @@ class UnitResultSchema(TypedDict):
     file: str
     accepted: bool
     equal_to_original: bool
-    semantic_retries: int
+    syntax_retries: int
     correctness_retries: int
     llm_calls: int
     tokens_in: int
@@ -17,9 +17,9 @@ class UnitResultSchema(TypedDict):
 class ResultSchema(TypedDict):
     run_index: int
     experiment_type: Literal['passive', 'active']
-    agent_type: Literal['standard', 'agent']
+    ai_type: Literal['traditional', 'agent']
     model: str
-    language: Literal['php']
+    language: str
     wall_time_seconds: float
     cpu_energy_joules: float
     gpu_energy_joules: float

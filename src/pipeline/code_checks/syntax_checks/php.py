@@ -9,7 +9,7 @@ from subprocess import TimeoutExpired, run as subprocess_run
 logger = getLogger(__name__)
 
 
-def semantic_check_php(code: str) -> Tuple[bool, str]:
+def syntax_check_php(code: str) -> Tuple[bool, str]:
     """
     Checks if the provided PHP code is syntactically correct.
 
@@ -44,7 +44,7 @@ def semantic_check_php(code: str) -> Tuple[bool, str]:
         result = subprocess_run(
             cmd,
             capture_output=True,
-            timeout=settings.semantic_check_timeout,
+            timeout=settings.syntax_check_timeout,
         )
 
         output = (result.stdout.decode() + result.stderr.decode()).strip()
@@ -52,7 +52,7 @@ def semantic_check_php(code: str) -> Tuple[bool, str]:
     except TimeoutExpired:
         logger.error(
             'PHP syntax check timed out after '
-            f'{settings.semantic_check_timeout} seconds.'
+            f'{settings.syntax_check_timeout} seconds.'
         )
         return (False, 'PHP syntax check timed out.')
     finally:

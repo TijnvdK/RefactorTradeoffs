@@ -8,15 +8,12 @@ from pathlib import Path
 from queue import SimpleQueue
 from shutil import copyfile, copytree
 from threading import Lock
-from time import time
+from time import sleep, time
 from typing import Dict, List, TypedDict
 from json import dumps as json_dumps
 from src.globals.custom_exceptions import LLMCallFailed
 from src.globals.types import ResultSchema, UnitResultSchema
-from src.pipeline.code_checks.correctness_checks import (
-    correctness_check_eb,
-)
-from src.pipeline.code_checks.semantic_checks import semantic_check_php
+from src.pipeline.code_checks.registry import get_repository_profile
 from src.pipeline.llm_context.tree_parser import (
     FunctionInfo,
     extract_functions,
@@ -54,24 +51,38 @@ class Unit(TypedDict):
     function_info: FunctionInfo
 
 
-SYSTEM_PROMPT_PASSIVE = (
-    'You are a green software expert. '
-    'You will be given a PHP source file and asked to refactor a specific '
-    'function for energy efficiency. '
-    'Return ONLY the refactored function definition, enclosed in a ```php '
-    'code block. '
-    "Do not change the function's name, parameters, or return type. "
-    'Do not include any explanation outside the code block.'
-)
+def _system_prompt_passive() -> str:
+    """
+    Build the passive system prompt for the configured repository.
+    """
 
-SYSTEM_PROMPT_ACTIVE = (
-    'You are an expert PHP developer. '
-    'You will be given a PHP source file and a SonarQube issue to fix. '
-    'Return ONLY the corrected function definition, enclosed in a ```php '
-    'code block. '
-    "Do not change the function's name, parameters, or return type. "
-    'Do not include any explanation outside the code block.'
-)
+    repository = get_repository_profile()
+    return (
+        'You are a green software expert. '
+        f'You will be given a {repository.language_name} source file and asked '
+        'to refactor a specific function for energy efficiency. '
+        'Return ONLY the refactored function definition, enclosed in a '
+        f'```{repository.language_extension} code block. '
+        "Do not change the function's name, parameters, or return type. "
+        'Do not include any explanation outside the code block.'
+    )
+
+
+def _system_prompt_active() -> str:
+    """
+    Build the active system prompt for the configured repository.
+    """
+
+    repository = get_repository_profile()
+    return (
+        f'You are an expert {repository.language_name} developer. '
+        f'You will be given a {repository.language_name} source file and a '
+        'SonarQube issue to fix. '
+        'Return ONLY the corrected function definition, enclosed in a '
+        f'```{repository.language_extension} code block. '
+        "Do not change the function's name, parameters, or return type. "
+        'Do not include any explanation outside the code block.'
+    )
 
 
 _processed_unit_count = 0
@@ -83,7 +94,7 @@ def _refactor(
 ) -> UnitResultSchema:
     """
     Perform a singular refactoring operation. This involves performing the
-    LLM refactoring, checking its semantic correctness, and checking its
+    LLM refactoring, checking its syntax correctness, and checking its
     functionality correctness.
 
 
@@ -102,21 +113,24 @@ def _refactor(
     """
 
     original_source = unit['file_path'].read_text()
+    repository = get_repository_profile()
 
     total_llm_calls = 0
     total_tokens_in = 0
     total_tokens_out = 0
     total_tool_calls = 0
 
-    semantic_retries = 0
-    semantic_retries_total = 0
+    syntax_retries = 0
+    syntax_retries_total = 0
     correctness_retries_total = 0
 
     # For the agent type, create one persistent session so that retry
     # feedback messages are sent as follow-up turns in the same conversation,
     # giving the agent full context of prior attempts and errors.
     openhands_session = (
-        OpenHandsSession(repo_path) if settings.agent_type == 'agent' else None
+        OpenHandsSession(str(repo_path))
+        if settings.ai_type == 'agent'
+        else None
     )
 
     def _rejected_result() -> UnitResultSchema:
@@ -129,7 +143,7 @@ def _refactor(
             file=str(unit['file_path']),
             accepted=False,
             equal_to_original=True,
-            semantic_retries=semantic_retries_total,
+            syntax_retries=syntax_retries_total,
             correctness_retries=correctness_retries_total,
             llm_calls=total_llm_calls,
             tokens_in=total_tokens_in,
@@ -138,11 +152,11 @@ def _refactor(
         )
 
     while correctness_retries_total <= settings.max_correctness_retries:
-        while semantic_retries <= settings.max_semantic_retries:
+        while syntax_retries <= settings.max_syntax_retries:
             try:
-                if settings.agent_type == 'standard':
+                if settings.ai_type == 'traditional':
                     history, refactored_code, usage = chat(history, message)
-                elif settings.agent_type == 'agent':
+                elif settings.ai_type == 'agent':
                     assert openhands_session is not None
                     tool_calls_before = openhands_session.tool_call_count
                     usage = openhands_session.send(message)
@@ -152,7 +166,7 @@ def _refactor(
                     refactored_code = unit['file_path'].read_text()
                 else:
                     raise RuntimeError(
-                        f'Unknown agent type: {settings.agent_type}'
+                        f'Unknown agent type: {settings.ai_type}'
                     )
             except LLMCallFailed as exc:
                 logger.warning(
@@ -167,7 +181,7 @@ def _refactor(
             total_tokens_in += usage['prompt_tokens']
             total_tokens_out += usage['completion_tokens']
 
-            if settings.agent_type == 'standard':
+            if settings.ai_type == 'traditional':
                 file_source = unit['file_path'].read_text()
                 current_info = relocate_function(
                     file_source, unit['function_info']
@@ -196,7 +210,7 @@ def _refactor(
                     file=str(unit['file_path']),
                     accepted=True,
                     equal_to_original=True,
-                    semantic_retries=semantic_retries_total,
+                    syntax_retries=syntax_retries_total,
                     correctness_retries=correctness_retries_total,
                     llm_calls=total_llm_calls,
                     tokens_in=total_tokens_in,
@@ -204,10 +218,10 @@ def _refactor(
                     tool_calls=total_tool_calls,
                 )
 
-            passed, check_output = semantic_check_php(code_to_check)
+            passed, check_output = repository.syntax_check(code_to_check)
             if passed:
                 logger.info(
-                    'Semantic check passed for %s in %s.',
+                    'syntax check passed for %s in %s.',
                     unit['function_info']['name'],
                     unit['file_path'],
                 )
@@ -215,15 +229,16 @@ def _refactor(
                 break
 
             logger.info(
-                'Semantic check failed (attempt %d) for %s: %s',
-                semantic_retries + 1,
+                'syntax check failed (attempt %d) for %s: %s',
+                syntax_retries + 1,
                 unit['function_info']['name'],
                 check_output,
             )
-            if settings.agent_type == 'standard':
+            if settings.ai_type == 'traditional':
                 message = (
                     'The code you returned has a syntax error. Fix it and '
-                    'return only the corrected function in a ```php code '
+                    'return only the corrected function in a '
+                    f'```{repository.language_extension} code '
                     f'block.\n\nError:\n{check_output}'
                 )
             else:
@@ -232,22 +247,22 @@ def _refactor(
                     f'{check_output}\n\nFix it.'
                 )
 
-            semantic_retries += 1
-            semantic_retries_total += 1
+            syntax_retries += 1
+            syntax_retries_total += 1
         else:
             logger.warning(
-                'Exhausted semantic retries for %s in %s - keeping original.',
+                'Exhausted syntax retries for %s in %s - keeping original.',
                 unit['function_info']['name'],
                 unit['file_path'],
             )
             return _rejected_result()
 
-        semantic_retries = 0  # reset for correctness loop
+        syntax_retries = 0  # reset for correctness loop
 
-        if settings.agent_type == 'standard':
+        if settings.ai_type == 'traditional':
             unit['file_path'].write_text(checked_source)
 
-        passed, test_output = correctness_check_eb()
+        passed, test_output = repository.correctness_check(None)
         if passed:
             logger.info(
                 'Correctness check passed for %s in %s.',
@@ -265,11 +280,12 @@ def _refactor(
         logger.info(f'test output: {test_output}')
 
         # Restore original so the next attempt starts from a clean state.
-        if settings.agent_type == 'standard':
+        if settings.ai_type == 'traditional':
             unit['file_path'].write_text(original_source)
             message = (
                 'The refactored function caused test failures. Fix it and '
-                'return only the corrected function in a ```php code '
+                'return only the corrected function in a '
+                f'```{repository.language_extension} code '
                 f'block.\n\nTest output:\n{test_output}'
             )
         else:
@@ -292,7 +308,7 @@ def _refactor(
         file=str(unit['file_path']),
         accepted=True,
         equal_to_original=False,
-        semantic_retries=semantic_retries_total,
+        syntax_retries=syntax_retries_total,
         correctness_retries=correctness_retries_total,
         llm_calls=total_llm_calls,
         tokens_in=total_tokens_in,
@@ -314,26 +330,28 @@ def _process_unit(unit: Unit, repo_path: Path) -> UnitResultSchema:
         UnitResultSchema: The result of the processing.
     """
 
+    language_extension = get_repository_profile().language_extension
+
     if settings.experiment_type == 'active':
-        system_prompt = SYSTEM_PROMPT_ACTIVE
+        system_prompt = _system_prompt_active()
 
         initial_message = f'{unit["task"]}'
-        if settings.agent_type == 'standard':
+        if settings.ai_type == 'traditional':
             enclosing_code = unit['function_info']['source']
             initial_message = (
-                f'Enclosing code for context:\n\n```php\n{enclosing_code}\n\n```'
-                + initial_message
+                f'Enclosing code for context:\n\n```{language_extension}\n'
+                f'{enclosing_code}\n\n```' + initial_message
             )
 
     else:
-        system_prompt = SYSTEM_PROMPT_PASSIVE
+        system_prompt = _system_prompt_passive()
 
         initial_message = f'{unit["task"]}'
-        if settings.agent_type == 'standard':
+        if settings.ai_type == 'traditional':
             file_source = unit['file_path'].read_text()
             initial_message = (
-                f'Full source file for context:\n\n```php\n{file_source}\n```\n\n'
-                + initial_message
+                f'Full source file for context:\n\n```{language_extension}\n'
+                f'{file_source}\n```\n\n' + initial_message
             )
 
     # Shared history across ALL retries so the LLM can see every prior
@@ -441,18 +459,19 @@ def _build_units_passive(repo_path: Path) -> List[Unit]:
     """
 
     units: List[Unit] = []
-    for php_file in (repo_path).rglob(f'*.{settings.language}'):
-        source = php_file.read_text()
+    extension = get_repository_profile().language_extension
+    for source_file in (repo_path).rglob(f'*.{extension}'):
+        source = source_file.read_text()
         for fn in extract_functions(source, min_loc=settings.min_function_loc):
             units.append(
                 Unit(
                     task=(
                         f'Refactor the function `{fn["name"]}` in '
-                        f'`{php_file.relative_to(repo_path)}` to be more '
+                        f'`{source_file.relative_to(repo_path)}` to be more '
                         'efficient and green, while maintaining its '
                         'functionality and function signature.'
                     ),
-                    file_path=php_file,
+                    file_path=source_file,
                     function_info=fn,
                 )
             )
@@ -586,9 +605,9 @@ def perform_run(
     result = ResultSchema(
         run_index=run_index,
         experiment_type=settings.experiment_type,
-        agent_type=settings.agent_type,
+        ai_type=settings.ai_type,
         model=settings.vllm_model,
-        language=settings.language,
+        language=get_repository_profile().language_name,
         wall_time_seconds=round(wall_seconds, 2),
         cpu_energy_joules=round(cpu_joules, 4),
         gpu_energy_joules=round(gpu_joules, 4),
@@ -613,6 +632,7 @@ def perform_run(
     )
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / f'run_{run_index}.json').write_text(json_dumps(result, indent=4))
+    copytree(run_repo, out_dir / 'repo', symlinks=True, dirs_exist_ok=False)
 
     logger.info(
         'Run %d complete - accepted %d / %d units, '
@@ -639,7 +659,7 @@ def runner():
         logger.info(
             f'Starting run {run_index}/{settings.run_size}\n'
             f'  | Experiment Type: {settings.experiment_type}\n'
-            f'  | Agent Type: {settings.agent_type}\n'
+            f'  | AI Type: {settings.ai_type}\n'
             f'  | Model: {settings.vllm_model}'
         )
 
@@ -662,6 +682,12 @@ def runner():
                 gpu_meter.stop()
 
             stop_vllm_server(vllm_process)
+
+        logger.info(
+            f'Run {run_index} complete - waiting {settings.cooldown_period} '
+            'seconds before next run.'
+        )
+        sleep(settings.cooldown_period)
 
 
 if __name__ == '__main__':

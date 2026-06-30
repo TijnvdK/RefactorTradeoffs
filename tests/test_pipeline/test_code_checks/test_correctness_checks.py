@@ -1,4 +1,4 @@
-from src.pipeline.code_checks.correctness_checks import (
+from src.pipeline.code_checks.correctness_checks.engineblock import (
     parse_and_format_eb_test_results,
 )
 

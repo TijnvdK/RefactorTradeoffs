@@ -32,7 +32,7 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
 
 
 class Settings(BaseSettings):
-    ## LLM settings ##
+    ## vLLM settings ##
     vllm_server_port: int
     vllm_model: str
     vllm_api_url: str
@@ -41,20 +41,21 @@ class Settings(BaseSettings):
 
     ## Timeouts ##
     vllm_server_timeout: int
-    semantic_check_timeout: int
+    syntax_check_timeout: int
     correctness_check_timeout: int
 
     ## Agent settings ##
-    agent_type: Literal['standard', 'agent']
-    language: Literal['php']
+    ai_type: Literal['traditional', 'agent']
+    repository_profile: str
 
     ## Experiment configuration ##
     experiment_type: Literal['passive', 'active']
     run_size: int
-    max_semantic_retries: int
+    max_syntax_retries: int
     max_correctness_retries: int
     min_function_loc: int
     max_parallel_tasks: int
+    cooldown_period: int
 
     ## Paths ##
     job_dir: str = Field(default='/tmp/job_dir')

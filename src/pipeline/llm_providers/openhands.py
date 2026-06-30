@@ -1,5 +1,4 @@
 from logging import getLogger
-from pathlib import Path
 from openhands.sdk import LLM, Agent, AgentContext, Conversation, Event
 from openhands.sdk.conversation.base import BaseConversation
 from openhands.sdk.event.llm_convertible.action import ActionEvent
@@ -9,9 +8,10 @@ from openhands.tools.task_tracker import TaskTrackerTool
 from openhands.tools.grep import GrepTool
 from pydantic import SecretStr
 from src.globals.custom_exceptions import LLMCallFailed
-from src.pipeline.llm_providers.tools.php_tools import (
-    CorrectnessCheckEbTool,
-    SemanticCheckPhpTool,
+from src.pipeline.code_checks.registry import get_repository_profile
+from src.pipeline.llm_providers.tools.check_tools import (
+    CorrectnessCheckTool,
+    SyntaxCheckTool,
 )
 from src.pipeline.llm_providers.vllm_client import TokenUsage
 from src.pipeline.worker_context import (
@@ -22,13 +22,21 @@ from src.settings import settings
 
 logger = getLogger(__name__)
 
-_SYSTEM_MESSAGE_SUFFIX = (
-    'You are refactoring PHP code. Use file_editor to read files, make the '
-    'refactoring, then write the changes back. Call semantic_check_php to '
-    'verify syntax, then correctness_check_eb to verify tests pass. '
-    'Call finish when done. Do NOT output any explanations, '
-    'summaries, or commentary; only make file edits and tool calls.'
-)
+
+def _build_system_prompt_suffix() -> str:
+    """
+    Build the agent system prompt suffix for the configured repository.
+    """
+
+    language_name = get_repository_profile().language_name
+    return (
+        f'You are refactoring {language_name} code. Use file_editor to read '
+        'files, make the refactoring, then write the changes back. Call '
+        f'{SyntaxCheckTool.name} to verify syntax, then '
+        f'{CorrectnessCheckTool.name} to verify tests pass. '
+        'Call finish when done. Do NOT output any explanations, '
+        'summaries, or commentary; only make file edits and tool calls.'
+    )
 
 
 class OpenHandsSession:
@@ -38,7 +46,7 @@ class OpenHandsSession:
     turn (initial task + any retry feedback messages).
     """
 
-    def __init__(self, working_dir: Path) -> None:
+    def __init__(self, working_dir: str) -> None:
         set_worker_index(worker_index_from_repo(working_dir))
 
         self._llm = LLM(
@@ -54,11 +62,11 @@ class OpenHandsSession:
                 Tool(name=FileEditorTool.name),
                 Tool(name=TaskTrackerTool.name),
                 Tool(name=GrepTool.name),
-                Tool(name=SemanticCheckPhpTool.name),
-                Tool(name=CorrectnessCheckEbTool.name),
+                Tool(name=SyntaxCheckTool.name),
+                Tool(name=CorrectnessCheckTool.name),
             ],
             agent_context=AgentContext(
-                system_message_suffix=_SYSTEM_MESSAGE_SUFFIX
+                system_message_suffix=_build_system_prompt_suffix()
             ),
         )
 

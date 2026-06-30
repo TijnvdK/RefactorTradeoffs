@@ -1,16 +1,32 @@
-from typing import List, Optional, TypedDict
-import tree_sitter_php
+from typing import Dict, FrozenSet, List, Optional, Tuple, TypedDict
 from tree_sitter import Language, Node, Parser
 
-_LANGUAGE = Language(tree_sitter_php.language_php())
-_PARSER = Parser(_LANGUAGE)
+from src.pipeline.code_checks.registry import get_repository_profile
+from src.settings import settings
 
-_FUNCTION_NODES = {
-    'function_definition',
-    'method_declaration',
-    'anonymous_function',
-    'arrow_function',
-}
+_PARSER_CACHE: Dict[str, Tuple[Parser, FrozenSet[str]]] = {}
+
+
+def _get_parser() -> Tuple[Parser, FrozenSet[str]]:
+    """
+    Return the parser for the configured repository. Will build and cache
+    on first use.
+
+    Returns:
+        Tuple[Parser, FrozenSet[str]]: The parser and function_node_types
+            for the configured repository.
+    """
+
+    key = settings.repository_profile
+    cached = _PARSER_CACHE.get(key)
+    if cached is not None:
+        return cached
+
+    profile = get_repository_profile()
+    parser = Parser(Language(profile.tree_sitter_language))
+    entry = (parser, profile.function_node_types)
+    _PARSER_CACHE[key] = entry
+    return entry
 
 
 class FunctionInfo(TypedDict):
@@ -22,7 +38,10 @@ class FunctionInfo(TypedDict):
 
 
 def _collect_functions(
-    node: Node, lines: List[str], results: List[FunctionInfo]
+    node: Node,
+    lines: List[str],
+    results: List[FunctionInfo],
+    function_node_types: FrozenSet[str],
 ) -> None:
     """
     Walk a node tree and retrieve information about function nodes.
@@ -33,9 +52,11 @@ def _collect_functions(
             the source code of each function.
         results (List[FunctionInfo]): A list to store the retrieved function
             information.
+        function_node_types (FrozenSet[str]): The tree-sitter node types that
+            represent a function for the configured language.
     """
 
-    if node.type in _FUNCTION_NODES:
+    if node.type in function_node_types:
         name_node = node.child_by_field_name('name')
 
         if name_node and name_node.text:
@@ -65,16 +86,17 @@ def _collect_functions(
         return
 
     for child in node.children:
-        _collect_functions(child, lines, results)
+        _collect_functions(child, lines, results, function_node_types)
 
 
 def extract_functions(source: str, min_loc: int = 0) -> List[FunctionInfo]:
     """
-    Parse a PHP source code file and retrieve information about every function
-    within that PHP source code file.
+    Parse a source code file and retrieve information about every function
+    within that source code file, using the parser for the configured
+    language.
 
     Args:
-        source (str): The PHP source code file.
+        source (str): The source code file.
         min_loc (int, optional): Only return functions that have at minimum
             this amount of LOC. Defaults to 0.
 
@@ -83,11 +105,12 @@ def extract_functions(source: str, min_loc: int = 0) -> List[FunctionInfo]:
             information about a function in the source code.
     """
 
-    tree = _PARSER.parse(source.encode())
+    parser, function_node_types = _get_parser()
+    tree = parser.parse(source.encode())
     lines = source.splitlines()
 
     results: List[FunctionInfo] = []
-    _collect_functions(tree.root_node, lines, results)
+    _collect_functions(tree.root_node, lines, results, function_node_types)
     return [f for f in results if f['LOC'] >= min_loc]
 
 
@@ -126,9 +149,7 @@ def relocate_function(
 
     Function line numbers captured when a file is first scanned go stale as
     soon as another function in the same file is spliced (the line count
-    shifts). Splicing with stale numbers cuts the wrong range and corrupts the
-    file, so callers must re-resolve a function against the current source right
-    before splicing.
+    shifts).
 
     The match is keyed first on the original function text, then falls back to
     a unique name match. Returns the up-to-date FunctionInfo,
@@ -163,7 +184,7 @@ def find_enclosing_function(source: str, line_number: int) -> FunctionInfo:
     Find the function that encloses a given line number in the source code.
 
     Args:
-        source (str): The PHP source code file.
+        source (str): The source code file.
         line_number (int): The line number to find the enclosing function for.
 
     Returns:

@@ -45,7 +45,7 @@ def get_worker_index() -> int:
     return getattr(_state, 'worker_index', 0)
 
 
-def worker_index_from_repo(repo_path: Path) -> int:
+def worker_index_from_repo(repo_path: str) -> int:
     """
     Recover a worker index from its working-copy directory name
     (``worker_{k}``). Lets thread-agnostic callers resolve the
