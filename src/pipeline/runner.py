@@ -234,6 +234,10 @@ def _refactor(
                 unit['function_info']['name'],
                 check_output,
             )
+
+            logger.info(f'Refactored code:\n```php\n{refactored_code}\n```\n')
+            logger.info(f'Code to check:\n```php\n{code_to_check}\n```\n')
+
             if settings.ai_type == 'traditional':
                 message = (
                     'The code you returned has a syntax error. Fix it and '
@@ -276,8 +280,6 @@ def _refactor(
             correctness_retries_total + 1,
             unit['function_info']['name'],
         )
-
-        logger.info(f'test output: {test_output}')
 
         # Restore original so the next attempt starts from a clean state.
         if settings.ai_type == 'traditional':
@@ -334,25 +336,16 @@ def _process_unit(unit: Unit, repo_path: Path) -> UnitResultSchema:
 
     if settings.experiment_type == 'active':
         system_prompt = _system_prompt_active()
-
-        initial_message = f'{unit["task"]}'
-        if settings.ai_type == 'traditional':
-            enclosing_code = unit['function_info']['source']
-            initial_message = (
-                f'Enclosing code for context:\n\n```{language_extension}\n'
-                f'{enclosing_code}\n\n```' + initial_message
-            )
-
     else:
         system_prompt = _system_prompt_passive()
 
-        initial_message = f'{unit["task"]}'
-        if settings.ai_type == 'traditional':
-            file_source = unit['file_path'].read_text()
-            initial_message = (
-                f'Full source file for context:\n\n```{language_extension}\n'
-                f'{file_source}\n```\n\n' + initial_message
-            )
+    initial_message = f'{unit["task"]}'
+    if settings.ai_type == 'traditional':
+        file_source = unit['file_path'].read_text()
+        initial_message = (
+            f'Full source file for context:\n\n```{language_extension}\n'
+            f'{file_source}\n```\n\n' + initial_message
+        )
 
     # Shared history across ALL retries so the LLM can see every prior
     # attempt and its error.
@@ -463,14 +456,20 @@ def _build_units_passive(repo_path: Path) -> List[Unit]:
     for source_file in (repo_path).rglob(f'*.{extension}'):
         source = source_file.read_text()
         for fn in extract_functions(source, min_loc=settings.min_function_loc):
+            if settings.ai_type == 'agent':
+                location = f'in file `{source_file.relative_to(repo_path)}` '
+            else:
+                location = ''
+
+            task = (
+                f'Refactor the function `{fn["name"]}` {location}'
+                'to be more efficient and green, while maintaining its '
+                'functionality and function signature.'
+            )
+
             units.append(
                 Unit(
-                    task=(
-                        f'Refactor the function `{fn["name"]}` in '
-                        f'`{source_file.relative_to(repo_path)}` to be more '
-                        'efficient and green, while maintaining its '
-                        'functionality and function signature.'
-                    ),
+                    task=task,
                     file_path=source_file,
                     function_info=fn,
                 )
@@ -502,21 +501,35 @@ def _build_units_active(
     issues: List[SonarQubeIssue] = json_loads(sonarqube_issues_path.read_text())
     units: List[Unit] = []
     for issue in issues:
-        # issue['file_path'] is relative to the original repo root; remap to
-        # the run's copy.
-        rel = Path(issue['file_path'])
-        abs_path = repo_path / rel
-        source = abs_path.read_text()
+        # issue['file_path'] is a SonarQube component key of the form
+        # "<projectKey>:<path/relative/to/repo/root>". Strip the project
+        # key prefix before remapping to the run's copy.
+
+        raw_path = issue['file_path']
+        relative_path = (
+            Path(raw_path.split(':', 1)[1])
+            if ':' in raw_path
+            else Path(raw_path)
+        )
+        absolute_path = repo_path / 'src' / relative_path
+        source = absolute_path.read_text()
         fn_info = find_enclosing_function(source, issue['line'])
+
+        if settings.ai_type == 'agent':
+            location = f'in file `{issue["file_path"]}` '
+        else:
+            location = ''
+
+        task = (
+            f'Fix the SonarQube issue: {issue["message"]} {location} at line '
+            f'{issue["line"]}. Do not change the function signature of '
+            'affected functions.'
+        )
+
         units.append(
             Unit(
-                task=(
-                    f'Fix the SonarQube issue: {issue["message"]} '
-                    f'in file `{issue["file_path"]}` at line {issue["line"]}. '
-                    'Do not change the function signature of affected '
-                    'functions.'
-                ),
-                file_path=abs_path,
+                task=task,
+                file_path=absolute_path,
                 function_info=fn_info,
             )
         )
@@ -556,7 +569,9 @@ def perform_run(
     else:
         units = _build_units_active(
             run_repo,
-            Path(__file__).parent / 'sonarqube' / 'sonarqube_issues.json',
+            Path(__file__).resolve().parents[1]
+            / 'sonarqube'
+            / 'sonarqube_issues.json',
         )
 
     by_file: Dict[Path, List[Unit]] = {}
