@@ -1,6 +1,6 @@
 from logging import getLogger
 from pathlib import Path
-from subprocess import TimeoutExpired, run as subprocess_run
+from subprocess import PIPE, TimeoutExpired, run as subprocess_run
 from tempfile import TemporaryDirectory
 from typing import List, Optional, Tuple, TypedDict
 from src.pipeline.worker_context import get_worker_index
@@ -17,7 +17,7 @@ class EBTestFailure(TypedDict):
     message: str
 
 
-def run_eb_tests(output_dir: str, worker_index: int) -> int:
+def run_eb_tests(output_dir: str, worker_index: int) -> Tuple[int, str]:
     """
     Runs the EB test suite using the provided output directory. The test
     results are expected to be saved in JUnit XML format in the specified
@@ -28,21 +28,27 @@ def run_eb_tests(output_dir: str, worker_index: int) -> int:
         worker_index (int): Index of the isolated EngineBlock environment.
 
     Returns:
-        int: The return code of the test execution.
+        Tuple[int, str]: The return code of the test execution, and its
+            captured stderr.
     """
 
     _runner = Path(__file__).parent / 'run_eb_tests.sh'
 
     try:
         cmd = ['bash', str(_runner), output_dir, str(worker_index)]
-        result = subprocess_run(cmd, timeout=settings.correctness_check_timeout)
+        result = subprocess_run(
+            cmd,
+            timeout=settings.correctness_check_timeout,
+            stderr=PIPE,
+            text=True,
+        )
     except TimeoutExpired:
         logger.error(
             'EB tests timed out after '
             f'{settings.correctness_check_timeout} seconds.'
         )
-        return 1
-    return result.returncode
+        return 1, ''
+    return result.returncode, result.stderr or ''
 
 
 def parse_and_format_eb_test_results(output_dir: str) -> str:
@@ -154,8 +160,23 @@ def correctness_check_eb(
         worker_index = get_worker_index()
 
     with TemporaryDirectory() as output_dir:
-        runner_return_code = run_eb_tests(output_dir, worker_index)
+        runner_return_code, runner_stderr = run_eb_tests(
+            output_dir, worker_index
+        )
+
         # Try to parse anything anyway even if the runner failed,
         # to get as much information as possible.
         failures = parse_and_format_eb_test_results(output_dir)
-        return (runner_return_code == 0, failures)
+        if runner_return_code == 0:
+            return (True, failures)
+
+        # A stage before any PHPUnit suite runs (cache:clear, schema
+        # reset, ...) can fail, leaving no JUnit XML behind and thus no
+        # parsed failures. Without this, the LLM would get an empty test
+        # output and no signal about what actually broke.
+        if not failures:
+            return (
+                False,
+                runner_stderr or 'The correctness check failed with no output.',
+            )
+        return (False, failures)

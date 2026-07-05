@@ -9,7 +9,7 @@ from queue import SimpleQueue
 from shutil import copyfile, copytree
 from threading import Lock
 from time import sleep, time
-from typing import Dict, List, TypedDict
+from typing import Dict, List, Tuple, TypedDict
 from json import dumps as json_dumps
 from src.globals.custom_exceptions import LLMCallFailed
 from src.globals.types import ResultSchema, UnitResultSchema
@@ -481,12 +481,10 @@ def _build_units_active(
     repo_path: Path, sonarqube_issues_path: Path
 ) -> List[Unit]:
     """
-    Build a list of units for active refactoring. Each unit corresponds to a
-    SonarQube issue in the source files under the given repository path.
-    The task is: <i>'''
-    Fix the SonarQube issue: {issue_message} in file `{file_path}` at line
-    `{line_number}`. Do not change the function signature of affected
-    functions.'''</i>
+    Build a list of units for active refactoring. SonarQube issues that fall
+    inside the same function are merged into a single unit so that function
+    is only ever refactored (and spliced back) once; issues outside any
+    function are each their own 'global_scope' unit.
 
     Args:
         repo_path (Path): The path to the repository containing source files.
@@ -494,12 +492,17 @@ def _build_units_active(
             SonarQube issues.
 
     Returns:
-        List[Unit]: A list of units, each representing a SonarQube issue to
-            be fixed.
+        List[Unit]: A list of units, each representing one function's worth
+            of SonarQube issues to be fixed.
     """
 
     issues: List[SonarQubeIssue] = json_loads(sonarqube_issues_path.read_text())
-    units: List[Unit] = []
+
+    groups: Dict[
+        Tuple[Path, str, int], Tuple[FunctionInfo, List[SonarQubeIssue]]
+    ] = {}
+    group_order: List[Tuple[Path, str, int]] = []
+
     for issue in issues:
         # issue['file_path'] is a SonarQube component key of the form
         # "<projectKey>:<path/relative/to/repo/root>". Strip the project
@@ -515,16 +518,58 @@ def _build_units_active(
         source = absolute_path.read_text()
         fn_info = find_enclosing_function(source, issue['line'])
 
+        if (
+            fn_info['name'] == 'global_scope'
+            and settings.ai_type == 'traditional'
+        ):
+            logger.info(
+                'Skipping global-scope SonarQube issue in %s at line %d - '
+                'not attemptable with ai_type=traditional.',
+                issue['file_path'],
+                issue['line'],
+            )
+            continue
+
+        group_key = (absolute_path, fn_info['name'], fn_info['start_line'])
+        if group_key not in groups:
+            groups[group_key] = (fn_info, [])
+            group_order.append(group_key)
+        groups[group_key][1].append(issue)
+
+    units: List[Unit] = []
+    for group_key in group_order:
+        fn_info, group_issues = groups[group_key]
+        absolute_path = group_key[0]
+
         if settings.ai_type == 'agent':
-            location = f'in file `{issue["file_path"]}` '
+            relative_path = absolute_path.relative_to(repo_path / 'src')
+            location = f'in file `{relative_path}` '
         else:
             location = ''
 
-        task = (
-            f'Fix the SonarQube issue: {issue["message"]} {location} at line '
-            f'{issue["line"]}. Do not change the function signature of '
-            'affected functions.'
-        )
+        if fn_info['name'] == 'global_scope':
+            function_reference = ''
+        else:
+            function_reference = f' inside the function `{fn_info["name"]}`'
+
+        if len(group_issues) == 1:
+            task = (
+                f'Fix the SonarQube issue: {group_issues[0]["message"]} '
+                f'{location}at line {group_issues[0]["line"]}'
+                f'{function_reference}. Do not change the function '
+                'signature of affected functions.'
+            )
+        else:
+            issue_list = '\n'.join(
+                f'{i}. At line {issue["line"]}: {issue["message"]}'
+                for i, issue in enumerate(group_issues, start=1)
+            )
+            task = (
+                f'Fix the following SonarQube issues {location}'.rstrip()
+                + f'{function_reference}:\n{issue_list}\n\n'
+                'Do not change the function signature of affected '
+                'functions.'
+            )
 
         units.append(
             Unit(
@@ -644,7 +689,8 @@ def perform_run(
     out_dir = (
         Path(__file__).parent.parent
         / 'results'
-        / ('passive' if result['experiment_type'] == 'passive' else 'active')
+        / settings.experiment_type
+        / settings.ai_type
         / f'run_{run_index}'
     )
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -704,6 +750,19 @@ def runner():
 
 
 if __name__ == '__main__':
+    from warnings import filterwarnings
+
+    # openhands.sdk emits this on every LLM call for models litellm has no
+    # price mapping for; it's cosmetic (cost tracking only) and floods the
+    # logs at ~1 warning per tool call. We can't patch the dependency, so
+    # filter it from our own entrypoint instead.
+    filterwarnings(
+        'ignore',
+        message=r'Cost calculation failed.*',
+        category=UserWarning,
+        module='openhands.sdk.llm.utils.telemetry',
+    )
+
     logging_basicConfig(
         level=logging_INFO,
         format='%(asctime)s - %(levelname)s - %(message)s',
