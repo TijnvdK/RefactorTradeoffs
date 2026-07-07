@@ -3,7 +3,7 @@ import tree_sitter_php
 from src.pipeline.code_checks.correctness_checks.engineblock import (
     correctness_check_eb,
 )
-from src.pipeline.code_checks.registry import (
+from src.pipeline.repository_registry.registry import (
     RepositoryProfile,
     register_repository,
 )

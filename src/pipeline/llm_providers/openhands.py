@@ -8,7 +8,7 @@ from openhands.tools.task_tracker import TaskTrackerTool
 from openhands.tools.grep import GrepTool
 from pydantic import SecretStr
 from src.globals.custom_exceptions import LLMCallFailed
-from src.pipeline.code_checks.registry import get_repository_profile
+from src.pipeline.repository_registry.registry import get_repository_profile
 from src.pipeline.llm_providers.tools.check_tools import (
     CorrectnessCheckTool,
     SyntaxCheckTool,

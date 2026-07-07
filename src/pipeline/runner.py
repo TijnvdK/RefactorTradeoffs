@@ -13,7 +13,7 @@ from typing import Dict, List, Tuple, TypedDict
 from json import dumps as json_dumps
 from src.globals.custom_exceptions import LLMCallFailed
 from src.globals.types import ResultSchema, UnitResultSchema
-from src.pipeline.code_checks.registry import get_repository_profile
+from src.pipeline.repository_registry.registry import get_repository_profile
 from src.pipeline.llm_context.tree_parser import (
     FunctionInfo,
     extract_functions,

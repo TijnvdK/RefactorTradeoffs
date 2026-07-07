@@ -115,8 +115,10 @@ class TestBuildUnits:
         assert units == []
 
     def test_build_units_active_with_issues(self, tmp_path: Path, mocker):
-        file1 = tmp_path / 'a.php'
-        file2 = tmp_path / 'b.php'
+        src_dir = tmp_path / 'src'
+        src_dir.mkdir()
+        file1 = src_dir / 'a.php'
+        file2 = src_dir / 'b.php'
         file1.write_text('<?php function fa() {} ?>')
         file2.write_text('<?php function fb() {} ?>')
 
@@ -129,7 +131,22 @@ class TestBuildUnits:
 
         mocker.patch(
             'src.pipeline.runner.find_enclosing_function',
-            side_effect=[{'name': 'fa'}, {'name': 'fb'}],
+            side_effect=[
+                {
+                    'name': 'fa',
+                    'start_line': 0,
+                    'end_line': 0,
+                    'source': 'function fa() {}',
+                    'LOC': 1,
+                },
+                {
+                    'name': 'fb',
+                    'start_line': 0,
+                    'end_line': 0,
+                    'source': 'function fb() {}',
+                    'LOC': 1,
+                },
+            ],
         )
 
         result = _build_units_active(tmp_path, issues_path)
@@ -140,40 +157,33 @@ class TestBuildUnits:
         assert 'Issue A' in result[0]['task']
         assert 'Issue B' in result[1]['task']
 
-    def test_build_units_active_with_enclosing_function(
-        self, tmp_path: Path, mocker
-    ):
-        php_file = tmp_path / 'foo.php'
-        content = '<?php function bar() { return 1; } ?>'
+    def test_build_units_active_with_enclosing_function(self, tmp_path: Path):
+        src_dir = tmp_path / 'src'
+        src_dir.mkdir()
+        php_file = src_dir / 'foo.php'
+        content = '<?php\nfunction bar() { return 1; }\n?>'
         php_file.write_text(content)
 
-        issues = [{'file_path': 'foo.php', 'line': 7, 'message': 'msg'}]
+        issues = [{'file_path': 'foo.php', 'line': 1, 'message': 'msg'}]
         issues_path = tmp_path / 'issues.json'
         issues_path.write_text(json_dumps(issues))
 
-        mock_find = mocker.patch(
-            'src.pipeline.runner.find_enclosing_function', return_value=None
-        )
+        result = _build_units_active(tmp_path, issues_path)
 
-        _build_units_active(tmp_path, issues_path)
+        assert len(result) == 1
+        assert result[0]['function_info']['name'] == 'bar'
 
-        mock_find.assert_called_once_with(content, 7)
-
-    def test_build_units_active_no_enclosing_function(
-        self, tmp_path: Path, mocker
-    ):
-        php_file = tmp_path / 'foo.php'
+    def test_build_units_active_no_enclosing_function(self, tmp_path: Path):
+        src_dir = tmp_path / 'src'
+        src_dir.mkdir()
+        php_file = src_dir / 'foo.php'
         php_file.write_text('<?php $x = 1; ?>')
 
         issues = [{'file_path': 'foo.php', 'line': 1, 'message': 'msg'}]
         issues_path = tmp_path / 'issues.json'
         issues_path.write_text(json_dumps(issues))
 
-        mocker.patch(
-            'src.pipeline.runner.find_enclosing_function', return_value=None
-        )
-
         result = _build_units_active(tmp_path, issues_path)
 
         assert len(result) == 1
-        assert result[0]['function_info'] is None
+        assert result[0]['function_info']['name'] == 'global_scope'

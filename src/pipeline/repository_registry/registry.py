@@ -75,4 +75,4 @@ def get_repository_profile() -> RepositoryProfile:
 
 # Remove circal dependencies of repository definitions trying to import
 # RepositoryProfile, while it has not yet been defined.
-import src.pipeline.code_checks.repositories  # noqa: E402,F401
+import src.pipeline.repository_registry.repositories  # noqa: E402,F401

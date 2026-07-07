@@ -10,7 +10,7 @@ from openhands.sdk import (
 from openhands.sdk.tool import ToolExecutor, register_tool
 from pydantic import Field
 
-from src.pipeline.code_checks.registry import get_repository_profile
+from src.pipeline.repository_registry.registry import get_repository_profile
 from src.pipeline.worker_context import worker_index_from_repo
 
 

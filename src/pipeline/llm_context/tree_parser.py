@@ -1,7 +1,7 @@
 from typing import Dict, FrozenSet, List, Optional, Tuple, TypedDict
 from tree_sitter import Language, Node, Parser
 
-from src.pipeline.code_checks.registry import get_repository_profile
+from src.pipeline.repository_registry.registry import get_repository_profile
 from src.settings import settings
 
 _PARSER_CACHE: Dict[str, Tuple[Parser, FrozenSet[str]]] = {}
