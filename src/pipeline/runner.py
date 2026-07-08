@@ -653,7 +653,7 @@ def perform_run(
             try:
                 all_unit_results.extend(future.result())
             except Exception as exc:
-                logger.error(
+                logger.exception(
                     'Unhandled error processing %s: %s', file_path, exc
                 )
 
@@ -731,7 +731,7 @@ def runner():
         try:
             perform_run(run_index, base_repo, cpu_meter, gpu_meter)
         except Exception as exc:
-            logger.error('Unhandled error in run %d: %s', run_index, exc)
+            logger.exception('Unhandled error in run %d: %s', run_index, exc)
         finally:
             # Stop all meters to ensure we don't leave them running in case of
             # an error.

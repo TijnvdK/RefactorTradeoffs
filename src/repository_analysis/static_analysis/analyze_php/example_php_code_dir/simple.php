@@ -33,5 +33,3 @@ $product = $calc->multiply(4, 2);
 
 $logger->log("Sum: " . $sum);
 $logger->log("Product: " . $product);
-
-?>

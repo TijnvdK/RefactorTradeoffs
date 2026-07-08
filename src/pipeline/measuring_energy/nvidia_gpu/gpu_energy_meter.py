@@ -26,7 +26,7 @@ class GPUEnergyMeter:
                 for i in range(nvmlDeviceGetCount())
             ]
         except NVMLError as error:
-            logger.error(f'Error initializing NVML: {error}')
+            logger.exception(f'Error initializing NVML: {error}')
             raise
 
         self._before: List[float] = []
@@ -57,14 +57,14 @@ class GPUEnergyMeter:
         ]
         self._running = False
 
-        total_energy_J = (
+        total_energy_j = (
             sum(
                 after_i - before_i
                 for after_i, before_i in zip(after, self._before)
             )
             / 1e3
         )
-        return total_energy_J
+        return total_energy_j
 
     def is_running(self) -> bool:
         """

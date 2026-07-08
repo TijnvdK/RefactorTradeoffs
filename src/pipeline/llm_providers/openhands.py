@@ -103,7 +103,7 @@ class OpenHandsSession:
         try:
             self._conversation.run()
         except Exception as _error:
-            logger.error('OpenHands session failed: %s', _error)
+            logger.exception('OpenHands session failed: %s', _error)
             raise LLMCallFailed(_error)
 
         metrics_after = self._llm.metrics
