@@ -28,7 +28,7 @@ def syntax_check_php(code: str) -> Tuple[bool, str]:
         return (False, 'Code is empty.')
 
     # Append a php tag if missing to ensure the syntax check runs correctly
-    if not (stripped.startswith('<?php') or stripped.startswith('<?')):
+    if not stripped.startswith(('<php', '<?')):
         code = '<?php\n' + code
 
     with NamedTemporaryFile(

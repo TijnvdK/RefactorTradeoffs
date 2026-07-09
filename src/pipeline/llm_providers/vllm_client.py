@@ -74,21 +74,21 @@ def chat(
     try:
         response = _send_message_to_llm(new_history)
     except APITimeoutError as _error:
-        logger.error(
+        logger.exception(
             'LLM API call timed out after %d seconds.',
             settings.vllm_server_timeout,
         )
         raise LLMCallFailed(_error)
     except APIConnectionError as _error:
-        logger.error(
+        logger.exception(
             'Failed to connect to LLM API at %s.', settings.vllm_api_url
         )
         raise LLMCallFailed(_error)
     except APIStatusError as _error:
-        logger.error('LLM API returned an error: %s', _error)
+        logger.exception('LLM API returned an error: %s', _error)
         raise LLMCallFailed(_error)
     except Exception as _error:
-        logger.error(
+        logger.exception(
             'An unexpected error occurred during LLM API call: %s', _error
         )
         raise LLMCallFailed(_error)

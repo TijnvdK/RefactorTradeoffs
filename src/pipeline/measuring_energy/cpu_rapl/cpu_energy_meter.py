@@ -18,7 +18,7 @@ class CPUEnergyMeter:
             rapl_setup()
             self._meter = Measurement('cpu_energy')
         except Exception as _error:
-            logger.error(f'Error initializing RAPL: {_error}')
+            logger.exception(f'Error initializing RAPL: {_error}')
             raise
 
         self._accumulated_j = 0.0
