@@ -1,5 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from logging import (
+    Filter,
+    LogRecord,
     getLogger,
     basicConfig as logging_basicConfig,
     INFO as logging_INFO,
@@ -43,6 +45,20 @@ from json import loads as json_loads
 from src.sonarqube.parse_issues import SonarQubeIssue
 
 logger = getLogger(__name__)
+
+
+class _DedupeContextWindowWarning(Filter):
+    """
+    openhands.sdk re-emits its multi-line "CONTEXT WINDOW EXCEEDED ERROR"
+    warning once per retried step within a single overflowing agent turn -
+    dozens of identical, verbatim blocks per occurrence. The turn still
+    fails and is handled by our own retry/rejection logic either way, so
+    only the first occurrence carries any information; drop the rest to
+    keep the run log readable.
+    """
+
+    def filter(self, record: LogRecord) -> bool:
+        return 'CONTEXT WINDOW EXCEEDED ERROR' not in record.getMessage()
 
 
 class Unit(TypedDict):
@@ -151,172 +167,180 @@ def _refactor(
             tool_calls=total_tool_calls,
         )
 
-    while correctness_retries_total <= settings.max_correctness_retries:
-        while syntax_retries <= settings.max_syntax_retries:
-            try:
-                if settings.ai_type == 'traditional':
-                    history, refactored_code, usage = chat(history, message)
-                elif settings.ai_type == 'agent':
-                    assert openhands_session is not None
-                    tool_calls_before = openhands_session.tool_call_count
-                    usage = openhands_session.send(message)
-                    total_tool_calls += (
-                        openhands_session.tool_call_count - tool_calls_before
-                    )
-                    refactored_code = unit['file_path'].read_text()
-                else:
-                    raise RuntimeError(
-                        f'Unknown agent type: {settings.ai_type}'
-                    )
-            except LLMCallFailed as exc:
-                logger.warning(
-                    'LLM call failed for %s in %s: %s',
-                    unit['function_info']['name'],
-                    unit['file_path'],
-                    exc,
-                )
-                return _rejected_result()
-
-            total_llm_calls += 1
-            total_tokens_in += usage['prompt_tokens']
-            total_tokens_out += usage['completion_tokens']
-
-            if settings.ai_type == 'traditional':
-                file_source = unit['file_path'].read_text()
-                current_info = relocate_function(
-                    file_source, unit['function_info']
-                )
-                if current_info is None:
+    try:
+        while correctness_retries_total <= settings.max_correctness_retries:
+            while syntax_retries <= settings.max_syntax_retries:
+                try:
+                    if settings.ai_type == 'traditional':
+                        history, refactored_code, usage = chat(history, message)
+                    elif settings.ai_type == 'agent':
+                        assert openhands_session is not None
+                        tool_calls_before = openhands_session.tool_call_count
+                        usage = openhands_session.send(message)
+                        total_tool_calls += (
+                            openhands_session.tool_call_count
+                            - tool_calls_before
+                        )
+                        refactored_code = unit['file_path'].read_text()
+                    else:
+                        raise RuntimeError(
+                            f'Unknown agent type: {settings.ai_type}'
+                        )
+                except LLMCallFailed as exc:
                     logger.warning(
-                        'Could not relocate %s in %s - keeping original.',
+                        'LLM call failed for %s in %s: %s',
+                        unit['function_info']['name'],
+                        unit['file_path'],
+                        exc,
+                    )
+                    return _rejected_result()
+
+                total_llm_calls += 1
+                total_tokens_in += usage['prompt_tokens']
+                total_tokens_out += usage['completion_tokens']
+
+                if settings.ai_type == 'traditional':
+                    file_source = unit['file_path'].read_text()
+                    current_info = relocate_function(
+                        file_source, unit['function_info']
+                    )
+                    if current_info is None:
+                        logger.warning(
+                            'Could not relocate %s in %s - keeping original.',
+                            unit['function_info']['name'],
+                            unit['file_path'],
+                        )
+                        return _rejected_result()
+                    code_to_check = splice_function(
+                        file_source, current_info, refactored_code
+                    )
+                else:
+                    code_to_check = refactored_code
+
+                if code_to_check == original_source:
+                    logger.info(
+                        'No changes detected for %s in %s, No checks needed.',
                         unit['function_info']['name'],
                         unit['file_path'],
                     )
-                    return _rejected_result()
-                code_to_check = splice_function(
-                    file_source, current_info, refactored_code
-                )
-            else:
-                code_to_check = refactored_code
+                    return UnitResultSchema(
+                        name=unit['function_info']['name'],
+                        file=str(unit['file_path']),
+                        accepted=True,
+                        equal_to_original=True,
+                        syntax_retries=syntax_retries_total,
+                        correctness_retries=correctness_retries_total,
+                        llm_calls=total_llm_calls,
+                        tokens_in=total_tokens_in,
+                        tokens_out=total_tokens_out,
+                        tool_calls=total_tool_calls,
+                    )
 
-            if code_to_check == original_source:
+                passed, check_output = repository.syntax_check(code_to_check)
+                if passed:
+                    logger.info(
+                        'syntax check passed for %s in %s.',
+                        unit['function_info']['name'],
+                        unit['file_path'],
+                    )
+                    checked_source = code_to_check
+                    break
+
                 logger.info(
-                    'No changes detected for %s in %s, No checks needed.',
+                    'syntax check failed (attempt %d) for %s: %s',
+                    syntax_retries + 1,
+                    unit['function_info']['name'],
+                    check_output,
+                )
+
+                logger.info(
+                    f'Refactored code:\n```php\n{refactored_code}\n```\n'
+                )
+                logger.info(f'Code to check:\n```php\n{code_to_check}\n```\n')
+
+                if settings.ai_type == 'traditional':
+                    message = (
+                        'The code you returned has a syntax error. Fix it '
+                        'and return only the corrected function in a '
+                        f'```{repository.language_extension} code '
+                        f'block.\n\nError:\n{check_output}'
+                    )
+                else:
+                    message = (
+                        'The file you wrote has a syntax error:\n\nError:\n'
+                        f'{check_output}\n\nFix it.'
+                    )
+
+                syntax_retries += 1
+                syntax_retries_total += 1
+            else:
+                logger.warning(
+                    'Exhausted syntax retries for %s in %s - keeping original.',
                     unit['function_info']['name'],
                     unit['file_path'],
                 )
-                return UnitResultSchema(
-                    name=unit['function_info']['name'],
-                    file=str(unit['file_path']),
-                    accepted=True,
-                    equal_to_original=True,
-                    syntax_retries=syntax_retries_total,
-                    correctness_retries=correctness_retries_total,
-                    llm_calls=total_llm_calls,
-                    tokens_in=total_tokens_in,
-                    tokens_out=total_tokens_out,
-                    tool_calls=total_tool_calls,
-                )
+                return _rejected_result()
 
-            passed, check_output = repository.syntax_check(code_to_check)
+            syntax_retries = 0  # reset for correctness loop
+
+            if settings.ai_type == 'traditional':
+                unit['file_path'].write_text(checked_source)
+
+            passed, test_output = repository.correctness_check(None)
             if passed:
                 logger.info(
-                    'syntax check passed for %s in %s.',
+                    'Correctness check passed for %s in %s.',
                     unit['function_info']['name'],
                     unit['file_path'],
                 )
-                checked_source = code_to_check
                 break
 
             logger.info(
-                'syntax check failed (attempt %d) for %s: %s',
-                syntax_retries + 1,
+                'Correctness check failed (attempt %d) for %s.',
+                correctness_retries_total + 1,
                 unit['function_info']['name'],
-                check_output,
             )
 
-            logger.info(f'Refactored code:\n```php\n{refactored_code}\n```\n')
-            logger.info(f'Code to check:\n```php\n{code_to_check}\n```\n')
-
+            # Restore original so the next attempt starts from a clean state.
             if settings.ai_type == 'traditional':
+                unit['file_path'].write_text(original_source)
                 message = (
-                    'The code you returned has a syntax error. Fix it and '
-                    'return only the corrected function in a '
+                    'The refactored function caused test failures. Fix it '
+                    'and return only the corrected function in a '
                     f'```{repository.language_extension} code '
-                    f'block.\n\nError:\n{check_output}'
+                    f'block.\n\nTest output:\n{test_output}'
                 )
             else:
                 message = (
-                    'The file you wrote has a syntax error:\n\nError:\n'
-                    f'{check_output}\n\nFix it.'
+                    'The tests failed after your changes:\n\nTest output:\n'
+                    f'{test_output}\n\nFix it.'
                 )
 
-            syntax_retries += 1
-            syntax_retries_total += 1
+            correctness_retries_total += 1
         else:
             logger.warning(
-                'Exhausted syntax retries for %s in %s - keeping original.',
+                'Exhausted correctness retries for %s in %s - keeping '
+                'original.',
                 unit['function_info']['name'],
                 unit['file_path'],
             )
             return _rejected_result()
 
-        syntax_retries = 0  # reset for correctness loop
-
-        if settings.ai_type == 'traditional':
-            unit['file_path'].write_text(checked_source)
-
-        passed, test_output = repository.correctness_check(None)
-        if passed:
-            logger.info(
-                'Correctness check passed for %s in %s.',
-                unit['function_info']['name'],
-                unit['file_path'],
-            )
-            break
-
-        logger.info(
-            'Correctness check failed (attempt %d) for %s.',
-            correctness_retries_total + 1,
-            unit['function_info']['name'],
+        return UnitResultSchema(
+            name=unit['function_info']['name'],
+            file=str(unit['file_path']),
+            accepted=True,
+            equal_to_original=False,
+            syntax_retries=syntax_retries_total,
+            correctness_retries=correctness_retries_total,
+            llm_calls=total_llm_calls,
+            tokens_in=total_tokens_in,
+            tokens_out=total_tokens_out,
+            tool_calls=total_tool_calls,
         )
-
-        # Restore original so the next attempt starts from a clean state.
-        if settings.ai_type == 'traditional':
-            unit['file_path'].write_text(original_source)
-            message = (
-                'The refactored function caused test failures. Fix it and '
-                'return only the corrected function in a '
-                f'```{repository.language_extension} code '
-                f'block.\n\nTest output:\n{test_output}'
-            )
-        else:
-            message = (
-                'The tests failed after your changes:\n\nTest output:\n'
-                f'{test_output}\n\nFix it.'
-            )
-
-        correctness_retries_total += 1
-    else:
-        logger.warning(
-            'Exhausted correctness retries for %s in %s - keeping original.',
-            unit['function_info']['name'],
-            unit['file_path'],
-        )
-        return _rejected_result()
-
-    return UnitResultSchema(
-        name=unit['function_info']['name'],
-        file=str(unit['file_path']),
-        accepted=True,
-        equal_to_original=False,
-        syntax_retries=syntax_retries_total,
-        correctness_retries=correctness_retries_total,
-        llm_calls=total_llm_calls,
-        tokens_in=total_tokens_in,
-        tokens_out=total_tokens_out,
-        tool_calls=total_tool_calls,
-    )
+    finally:
+        if openhands_session is not None:
+            openhands_session._conversation.close()
 
 
 def _process_unit(unit: Unit, repo_path: Path) -> UnitResultSchema:
@@ -518,10 +542,7 @@ def _build_units_active(
         source = absolute_path.read_text()
         fn_info = find_enclosing_function(source, issue['line'])
 
-        if (
-            fn_info['name'] == 'global_scope'
-            and settings.ai_type == 'traditional'
-        ):
+        if fn_info['name'] == 'global_scope':
             logger.info(
                 'Skipping global-scope SonarQube issue in %s at line %d - '
                 'not attemptable with ai_type=traditional.',
@@ -578,6 +599,7 @@ def _build_units_active(
                 function_info=fn_info,
             )
         )
+
     return units
 
 

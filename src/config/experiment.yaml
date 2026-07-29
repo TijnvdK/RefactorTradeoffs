@@ -23,6 +23,7 @@ max_syntax_retries: 5
 max_correctness_retries: 5
 min_function_loc: 15
 max_parallel_tasks: 2
+max_reported_test_failures: 10
 cooldown_period: 60
 
 ## SonarQube ##

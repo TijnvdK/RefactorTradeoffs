@@ -4,6 +4,7 @@ repos:
     rev: v6.0.0
     hooks:
       - id: check-added-large-files
+        args: ['--maxkb=1000']
       - id: check-yaml
       - id: double-quote-string-fixer
       - id: end-of-file-fixer

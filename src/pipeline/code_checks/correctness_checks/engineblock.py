@@ -2,7 +2,7 @@ from logging import getLogger
 from pathlib import Path
 from subprocess import PIPE, TimeoutExpired, run as subprocess_run
 from tempfile import TemporaryDirectory
-from typing import List, Optional, Tuple, TypedDict
+from typing import Dict, List, Optional, Tuple, TypedDict
 from src.pipeline.worker_context import get_worker_index
 from src.settings import settings
 from glob import glob
@@ -114,6 +114,11 @@ def parse_and_format_eb_test_results(output_dir: str) -> str:
         ---
         ```
 
+        Failures sharing an identical message are collapsed into one block
+        listing every affected test, and only the first
+        `settings.max_reported_test_failures` distinct messages are included,
+        to keep the output within the LLM's context window.
+
         Args:
             failures (List[EBTestFailure]): A list of EB test failures.
 
@@ -121,16 +126,37 @@ def parse_and_format_eb_test_results(output_dir: str) -> str:
             str: The formatted string containing all test failures.
         """
 
-        blocks = []
+        tests_by_message: Dict[str, List[str]] = {}
+        message_order: List[str] = []
+        suite_by_message: Dict[str, str] = {}
         for failure in failures:
-            lines = [
-                f'SUITE:  {failure["suite"]}',
-                f'TEST:   {failure["test"]}',
-            ]
-            if failure['message']:
-                lines.append(failure['message'])
+            message = failure['message']
+            if message not in tests_by_message:
+                tests_by_message[message] = []
+                message_order.append(message)
+                suite_by_message[message] = failure['suite']
+            tests_by_message[message].append(failure['test'])
+
+        total_messages = len(message_order)
+        shown_messages = message_order[: settings.max_reported_test_failures]
+
+        blocks = []
+        for message in shown_messages:
+            tests = tests_by_message[message]
+            lines = [f'SUITE:  {suite_by_message[message]}']
+            lines.extend(f'TEST:   {test}' for test in tests)
+            if message:
+                lines.append(message)
             lines.append('---')
             blocks.append('\n'.join(lines))
+
+        omitted = total_messages - len(shown_messages)
+        if omitted > 0:
+            blocks.append(
+                f'... {omitted} more distinct failure(s) omitted for '
+                'brevity ...'
+            )
+
         return '\n'.join(blocks) + '\n' if blocks else ''
 
     return format_failures(parse_eb_test_results(output_dir))

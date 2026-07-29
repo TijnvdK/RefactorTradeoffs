@@ -10,6 +10,7 @@ from pydantic_settings import (
 from yaml import safe_load
 
 PARENT_DIR = Path(__file__).parent
+REPO_ROOT = PARENT_DIR.parent
 
 
 class YamlSettingsSource(PydanticBaseSettingsSource):
@@ -55,6 +56,7 @@ class Settings(BaseSettings):
     max_correctness_retries: int
     min_function_loc: int
     max_parallel_tasks: int
+    max_reported_test_failures: int
     cooldown_period: int
 
     ## Paths ##
@@ -70,7 +72,7 @@ class Settings(BaseSettings):
     sq_project_key: str
 
     model_config = SettingsConfigDict(
-        env_file='.env',
+        env_file=REPO_ROOT / '.env',
         env_file_encoding='utf-8',
         case_sensitive=False,
         extra='ignore',

@@ -1,8 +1,14 @@
 from pathlib import Path
+from sys import path as sys_path
 from typing import Any, Dict, List, Optional, TypedDict
 from requests import get as requests_get
-from src.settings import settings
 from json import dump as json_dumps
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys_path:
+    sys_path.insert(0, str(REPO_ROOT))
+
+from src.settings import settings  # noqa: E402
 
 DEFAULT_SEVERITIES = 'BLOCKER,CRITICAL,MAJOR,MINOR'
 DEFAULT_TYPES = 'CODE_SMELL,BUG,VULNERABILITY'
