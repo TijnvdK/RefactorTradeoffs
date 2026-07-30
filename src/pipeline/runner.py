@@ -651,7 +651,7 @@ def perform_run(
 
     all_unit_results: List[UnitResultSchema] = []
 
-    max_workers = min(len(by_file), settings.max_parallel_tasks)
+    max_workers = min(len(by_file), settings.max_parallel_units)
 
     # Pool of isolated-environment indices, one per worker thread. Each thread
     # claims a distinct index on its first task and keeps it.

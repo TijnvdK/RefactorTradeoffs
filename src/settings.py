@@ -55,7 +55,7 @@ class Settings(BaseSettings):
     max_syntax_retries: int
     max_correctness_retries: int
     min_function_loc: int
-    max_parallel_tasks: int
+    max_parallel_units: int
     max_reported_test_failures: int
     cooldown_period: int
 

@@ -74,7 +74,7 @@ export PATH=/usr/bin:${PATH:-}
 source "./.venv/bin/activate"
 export PYTHONPATH="$(pwd):${PYTHONPATH:-}"
 
-NUM_WORKERS=$(python -c 'from src.settings import settings; print(settings.max_parallel_tasks)')
+NUM_WORKERS=$(python -c 'from src.settings import settings; print(settings.max_parallel_units)')
 
 # If you are refactoring EngineBlock, you need to setup the PHP environment.
 # Uncomment the following lines to setup this environment.

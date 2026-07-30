@@ -5,7 +5,7 @@ from threading import local
 from src.settings import settings
 
 # Per-thread worker identity. Each pipeline worker thread is assigned a stable
-# index in [0, max_parallel_tasks) when it starts processing work. That index
+# index in [0, max_parallel_units) when it starts processing work. That index
 # selects which isolated environment the thread's correctness
 # checks run against, keeping concurrent threads from sharing test state.
 
@@ -27,7 +27,7 @@ def set_worker_index(index: int) -> None:
     Bind the calling thread to worker 'index'.
 
     Args:
-        index (int): The worker index in [0, max_parallel_tasks) to bind the
+        index (int): The worker index in [0, max_parallel_units) to bind the
             calling thread to.
     """
 
@@ -115,7 +115,7 @@ def provision_worker_repos(run_repo: Path) -> None:
         run_repo (Path): The path to the current run's repo.
     """
 
-    for worker_index in range(settings.max_parallel_tasks):
+    for worker_index in range(settings.max_parallel_units):
         worker_src = get_worker_repo(worker_index) / 'src'
         worker_src.mkdir(parents=True, exist_ok=True)
 
