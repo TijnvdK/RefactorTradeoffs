@@ -1,3 +1,11 @@
+import matplotlib.font_manager as fm
+import matplotlib.pyplot as plt
+
+font_path = '~/.fonts/CrimsonPro/CrimsonPro-VariableFont_wght.ttf'
+fm.fontManager.addfont(font_path)
+font_name = fm.FontProperties(fname=font_path).get_name()
+plt.rcParams['font.family'] = font_name
+
 FONTS = {
     'font.family': 'serif',
     'font.serif': ['Crimson Pro'],
@@ -5,7 +13,7 @@ FONTS = {
     'mathtext.rm': 'Crimson Pro',
     'mathtext.bf': 'Crimson Pro:bold',
     'mathtext.it': 'Crimson Pro:italic',
-    'font.size': 12,
+    'font.size': 14,
 }
 
 COLOR_PALLETTE = {
